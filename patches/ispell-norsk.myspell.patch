@@ -1,6 +1,17 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 15:28:09.000000000 +0100
-@@ -33,15 +33,13 @@
++++ ispell-3.2.06/languages/norsk/Makefile	2005-02-09 12:46:23.000000000 +0100
+@@ -19,6 +19,10 @@
+ DICTIONARY	=	$(LANGUAGE).mch
+ HASHFILE	=	$(LANGUAGE).hash
+ 
++# Version no for aspell dictionary output
++ASPELL_VERSION	=	0.60
++
++
+ #
+ # The following variables may be overridden by the superior Makefile,
+ # based on the LANGUAGES variable in config.X.
+@@ -33,15 +37,13 @@
  
  # Some technical variables for managing hyphen points and the header
  
@@ -18,7 +29,7 @@
  CH=${LCH}${UCH}
  PRE=a-s
  SUFFNORM=][t-zA-Z^
-@@ -50,7 +48,7 @@
+@@ -50,7 +52,7 @@
  #SUFF=][t-zA-Z\\\\\\\`^_
  
  
@@ -27,7 +38,7 @@
  # should be in the dictionary.  The line
  
  # /^[-${LCH}]{4}\[${SUFF}]/   {if ($$2>4) {print $$1,$$2}} 
-@@ -116,8 +114,7 @@
+@@ -116,8 +118,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
@@ -37,7 +48,7 @@
  
  # There is a system for selecting words to include in the Ispell
  # dictionary.  Unfortunately it is rather complex and not too easy to
-@@ -219,6 +216,10 @@
+@@ -219,6 +220,12 @@
  
  all: norsk.hash nynorsk.hash
  
@@ -45,10 +56,12 @@
 +
 +myspell-dist: nb_NO.zip nn_NO.zip
 +
++aspell-dist: aspell6-nb-$(ASPELL_VERSION).tar.bz2 aspell6-nn-$(ASPELL_VERSION).tar.bz2
++
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -268,8 +269,49 @@
+@@ -268,8 +275,88 @@
  	sed -e '/^prefixes.*/,//d' $< > $@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
@@ -89,6 +102,45 @@
 +%.zip: %.dic %.aff README_%.txt
 +	zip $@ $^
 +
++# Aspell:
++aspell:
++	install -d -m 775 $@
++
++aspell/%.dat: aspell
++	rm -f $@
++	sed -n -e 's/^lang/name/p' -e 's/^doc_encoding/charset/p' $^ > $@
++	echo "special \" -*- . -*-" >> $@
++	echo "run-together true" >> $@
++	echo "soundslike none" >> $@
++
++aspell/Copyright: README.myspell aspell
++	cp -f $< $@
++	chmod +w $@
++
++aspell/nb.wl: norsk.mch aspell
++	cp -f $< $@
++
++aspell/nn.wl: nynorsk.mch aspell
++	cp -f $< $@
++
++aspell/%_affix.dat: %_NO.aff aspell
++	cp -f $< $@
++
++# *** Should perhaps try to pick up the following from the actual "aspell-lang" dist
++aspell/proc: aspell-proc.pl aspell
++	cp -f $< $@
++
++$(foreach l, nb nn, aspell/aspell6-$l-$(ASPELL_VERSION).tar.bz2): aspell/aspell6-%-$(ASPELL_VERSION).tar.bz2 : aspell/%.dat aspell/Copyright aspell/%_affix.dat aspell/%.wl aspell/proc aspell-%.info.in
++	rm -f $(dir $@)/info
++	sed -e 's/@VERSION@/$(ASPELL_VERSION)/' aspell-$*.info.in > $(dir $@)/info	
++	cd $(dir $@); perl proc create;\
++	./configure; \
++	make $*.cwl; \
++	make dist-nogen
++
++$(foreach l, nb nn, aspell6-$l-$(ASPELL_VERSION).tar.bz2): % : aspell/%
++	cp -f $< $@
++
 +# First of all, create a separate wordlist for each cathegory. It is sorted
 +# exactly the same way as (other) generated data, as 'join' command will
 +# otherwise work incorrectly.
@@ -99,7 +151,7 @@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +319,6 @@
+@@ -277,7 +364,6 @@
  # improved.
  
  
@@ -107,7 +159,7 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,71 +328,51 @@
+@@ -287,71 +373,51 @@
  # Isn't it amazing how much you can do with sed?
  
  # If we try to munch the whole B dictionary in one run, ispell will
@@ -211,7 +263,7 @@
  	  | awk --source '\
  		{i = 1;\
  		s = 0;\
-@@ -360,21 +381,30 @@
+@@ -360,21 +426,30 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -251,7 +303,7 @@
  	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
  	  | tr '*' '\n' \
  	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-@@ -387,62 +417,70 @@
+@@ -387,62 +462,70 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -344,7 +396,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,60 +494,56 @@
+@@ -456,60 +539,56 @@
  
  
  
@@ -419,7 +471,7 @@
  
  #	The following target is used in the English makefile, and is
  #	required to be present in all other language Makefiles as
-@@ -525,6 +559,6 @@
+@@ -525,6 +604,6 @@
  #	directories.
  #
  dictclean:
@@ -578,3 +630,47 @@
 +    }
 +    close(FILE);
 +}
+--- ispell-3.2.06/languages/norsk/aspell-nn.info.in.my	2005-02-09 12:43:17.000000000 +0100
++++ ispell-3.2.06/languages/norsk/aspell-nn.info.in	2005-02-09 12:24:31.000000000 +0100
+@@ -0,0 +1,19 @@
++name_english Norwegian Nynorsk
++lang nn
++version @VERSION@
++doc_encoding iso8859-1
++url http://www.uio.no/~runekl/dictionary.html
++author:
++  name  Rune Kleveland
++  email runekl at math uio no
++author:
++  name  Toralf Lund
++  email toralf at procaptura com
++copyright GPL
++source-version 2.0
++accurate true
++complete true
++alias nn nynorsk
++dict:
++  name nn
++  add nn
+--- ispell-3.2.06/languages/norsk/aspell-nb.info.in.my	2005-02-09 12:43:20.000000000 +0100
++++ ispell-3.2.06/languages/norsk/aspell-nb.info.in	2005-02-09 13:30:39.000000000 +0100
+@@ -0,0 +1,19 @@
++name_english Norwegian Bokmal
++lang nb
++version @VERSION@
++doc_encoding iso8859-1
++url http://www.uio.no/~runekl/dictionary.html
++author:
++  name  Rune Kleveland
++  email runekl at math uio no
++author:
++  name  Toralf Lund
++  email toralf at procaptura com
++copyright GPL
++source-version 2.0
++accurate true
++complete true
++alias nb no norsk bokmal bokmål
++dict:
++  name nb
++  add nb
