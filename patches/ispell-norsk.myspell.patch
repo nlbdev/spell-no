@@ -1,12 +1,12 @@
 --- ispell-3.2.06/languages/norsk/Makefile.myspell	Tue Sep  5 23:50:30 2000
-+++ ispell-3.2.06/languages/norsk/Makefile	Fri Jun  7 10:35:28 2002
++++ ispell-3.2.06/languages/norsk/Makefile	Thu Nov 21 15:09:15 2002
 @@ -116,8 +116,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
 -
 -COMPOUNDLIMIT=0
-+COMPOUNDLIMIT=20
++COMPOUNDLIMIT=5
  
  # There is a system for selecting words to include in the Ispell
  # dictionary.  Unfortunately it is rather complex and not too easy to
@@ -19,7 +19,7 @@
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -269,7 +270,29 @@
+@@ -269,7 +270,31 @@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
  norsk.words: norsk.words.sq
@@ -44,13 +44,15 @@
 +# the same way as generated data. It will be used when calling 'join'
 +# to merge wordlist with other data, as the utility would sometimes
 +# get confused when original was passed. (6 Jun 2002, toralf@kscanners.com)
++# *** Hack: Word "i" is missing from bokmål and nynorsk, "å" from bokmål
++#           only. Do tricks here to get them included...
 +
 +%.words.plain: %.words
-+	sed "s/#.*//" < $< | egrep -v "^[[:space:]]*$$" | sort > $@
++	(sed -e "s/#.*//" -e "s/^å .*/å * 31 B/" $< | egrep -v "^[[:space:]]*$$"; echo "i * 31 B") | sort > $@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +300,7 @@
+@@ -277,7 +302,7 @@
  # improved.
  
  
@@ -59,7 +61,7 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -345,7 +368,7 @@
+@@ -345,7 +370,7 @@
  	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
  	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
  	  | sort \
@@ -68,7 +70,7 @@
  	  | sed -e 's/\* //' \
  	  | cut -d ' ' -f2,3 \
  	  | sort -n \
-@@ -391,7 +414,7 @@
+@@ -391,7 +416,7 @@
  	  | uniq \
  	  > $@
  #	Comment out the next line if you are debugging.
@@ -77,7 +79,7 @@
  
  
  norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
-@@ -437,12 +460,16 @@
+@@ -437,12 +462,16 @@
  # Remove all the line numbers that is found twice, and all words
  # containing xxxx and yyyy.  Those words didn't fit in in the munching,
  # and since it is few words I don't want to fiddle with them.
@@ -96,7 +98,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -509,7 +536,7 @@
+@@ -509,7 +538,7 @@
  	      ${DICTIONARY} ny${DICTIONARY} \
  	      ${AFFIXES} ny${AFFIXES} \
  	      ${AFFIXES}.munch ny${AFFIXES}.munch \
