@@ -1,0 +1,92 @@
+--- ispell-3.2.06/languages/norsk/Makefile.myspell	Tue Sep  5 23:50:30 2000
++++ ispell-3.2.06/languages/norsk/Makefile	Thu Jun  6 14:25:14 2002
+@@ -117,7 +117,7 @@
+ # In sum; It is nice if ispell can make a suggestion words like
+ # `angrefrisperiode', but it consumes space and memory.
+ 
+-COMPOUNDLIMIT=0
++COMPOUNDLIMIT=9
+ 
+ # There is a system for selecting words to include in the Ispell
+ # dictionary.  Unfortunately it is rather complex and not too easy to
+@@ -219,6 +219,8 @@
+ 
+ all: norsk.hash nynorsk.hash
+ 
++myspell: norsk-myspell.aff norsk-myspell.dic nynorsk-myspell.aff nynorsk-myspell.dic 
++
+ install: install-norsk install-nynorsk install-scripts
+ 
+ install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
+@@ -269,7 +271,29 @@
+ 	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
+ 
+ norsk.words: norsk.words.sq
+-	unsq < norsk.words.sq > norsk.words
++	PATH=$(PATHADDER):$$PATH; \
++	export PATH; unsq < norsk.words.sq > norsk.words
++
++# MySpell support (6 Jun 2002, toralf@kscanners.com)
++# *** FIXME: Also generate "TRY" line
++%-myspell.aff: %.aff
++	echo "SET ISO8859-1" > $@
++	echo "TRY aerndtislogmkpbhfjuvæcøåyqxzvwéèóôôçî" >> $@
++	perl iaff2myaff.perl $< >> $@
++
++# Note: mch.cnt is secondary output from buildhash
++norsk.mch.cnt nynorsk.mch.cnt: %.mch.cnt: %.hash
++
++norsk-myspell.dic nynorsk-myspell.dic: %-myspell.dic : %.mch.cnt %.mch 
++	cat $^ > $@
++
++# Create a version of wordlist that is free of comments etc. and sorted
++# the same way as generated data. It will be used when calling 'join'
++# to merge wordlist with other data, as the utility would sometimes
++# get confused when original was passed. (6 Jun 2002, toralf@kscanners.com)
++
++%.words.plain: %.words
++	sed "s/#.*//" < $< | egrep -v "^[[:space:]]*$$" | sort > $@
+ 
+ # The following ugly code munches a part of the base file, keeping the
+ # indications of the frequency of the words.  It also removes some
+@@ -277,7 +301,7 @@
+ # improved.
+ 
+ 
+-munched.%: norsk.words norsk.aff.munch norsk.munch.hash
++munched.%: norsk.words.plain norsk.aff.munch norsk.munch.hash
+ # The first pipe produces a list of all words in the % category, with
+ # each root word followed by one line for each flag containing the
+ # root word and the flag.  The prefix flags are treated as part of the
+@@ -345,7 +369,7 @@
+ 	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
+ 	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
+ 	  | sort \
+-	  | join - ${LANGUAGE}.words \
++	  | join - ${LANGUAGE}.words.plain \
+ 	  | sed -e 's/\* //' \
+ 	  | cut -d ' ' -f2,3 \
+ 	  | sort -n \
+@@ -437,8 +461,12 @@
+ # Remove all the line numbers that is found twice, and all words
+ # containing xxxx and yyyy.  Those words didn't fit in in the munching,
+ # and since it is few words I don't want to fiddle with them.
++# Note: Red Hat Linux 7.2's version of sort dumps core when empty file is
++#       passed, hence the '-s' test.  (6 Jun 2002, toralf@kscanners.com)
++
+ 	cat -n forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) \
+-	  | sort -n -m -s +0 -1  comp3.tmp - \
++	  | (if [ -s comp3.tmp ]; then sort -n -m -s +0 -1  comp3.tmp - ; else \
++	     cat -; fi)\
+ 	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
+ 	  | tr -d '\- 	0-9' \
+ 	  > $@
+@@ -509,7 +537,7 @@
+ 	      ${DICTIONARY} ny${DICTIONARY} \
+ 	      ${AFFIXES} ny${AFFIXES} \
+ 	      ${AFFIXES}.munch ny${AFFIXES}.munch \
+-	      comp[123].tmp*
++	      comp[123].tmp* *myspell* munched.* core*
+ 
+ #	The following target is used in the English makefile, and is
+ #	required to be present in all other language Makefiles as

@@ -1,0 +1,185 @@
+--- ispell-3.2.06/local.h.samp.norsk	Thu Jun  6 13:18:56 2002
++++ ispell-3.2.06/local.h.samp	Thu Jun  6 13:20:04 2002
+@@ -106,7 +106,7 @@
+ 
+ #define MINIMENU	/* Display a mini-menu at the bottom of the screen */
+ #define NO8BIT		/* Remove this if you use ISO character sets */
+-#undef USG		/* Define on System V or if term.c won't compile */
++#define USG		/* Define on System V or if term.c won't compile */
+ #undef NO_FCNTL_H	/* Define if you get compile errors on fcntl.h */
+ #undef NO_MKSTEMP	/* Define if you get compile or link errors */
+ 
+--- ispell-3.2.06/parse.y.norsk	Tue Jun  4 13:26:32 2002
++++ ispell-3.2.06/parse.y	Tue Jun  4 13:29:12 2002
+@@ -719,7 +719,7 @@
+ 				      toupper (hashheader.compoundbit);
+ #endif /* MASKBITS */
+ #if MASKBITS <= 64
+-				if (!isalpha (hashheader.compoundbit))
++				if (hashheader.compoundbit < 'A' || hashheader.compoundbit>'z')
+ 				    yyerror (PARSE_Y_BAD_FLAG);
+ #endif /* MASKBITS */
+ 				hashheader.compoundbit =
+@@ -915,7 +915,7 @@
+ 				flagbit = toupper (flagbit);
+ #endif /* MASKBITS */
+ #if MASKBITS <= 64
+-			    if (!isalpha (flagbit))
++			    if (flagbit < 'A' || flagbit > 'z')
+ 				yyerror (PARSE_Y_BAD_FLAG);
+ #endif /* MASKBITS */
+ 			    flagbit = CHARTOBIT (flagbit);
+@@ -947,7 +947,7 @@
+ 				flagbit = toupper (flagbit);
+ #endif /* MASKBITS */
+ #if MASKBITS <= 64
+-			    if (!isalpha (flagbit))
++			    if (flagbit < 'A' || flagbit > 'z')
+ 				yyerror (PARSE_Y_BAD_FLAG);
+ #endif /* MASKBITS */
+ 			    flagbit = CHARTOBIT (flagbit);
+--- /dev/null	Thu Aug 30 22:30:55 2001
++++ ispell-3.2.06/unsq.c	Thu Jun  6 09:13:56 2002
+@@ -0,0 +1,142 @@
++#ifndef lint
++static char Rcs_Id[] =
++    "$Id$";
++#endif
++
++/*
++ * Copyright 1993, 1999, 2001, Geoff Kuenning, Claremont, CA
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All modifications to the source code must be clearly marked as
++ *    such.  Binary redistributions based on modified source code
++ *    must be clearly marked as modified versions in the documentation
++ *    and/or other materials provided with the distribution.
++ * 4. Any web site or other electronic service that offers ispell for
++ *    download or other electronic transfer as a separate entity, in
++ *    either source or binary form, must also include a prominent statement
++ *    indicating that information about ispell can be obtained from the
++ *    following Web site URL:
++ *	http://fmg-www.cs.ucla.edu/geoff/ispell.html
++ *    If the offering service supports hyperlinks, the aforementioned
++ *    Web site must also be offered as a hyperlink.  Condition #4 does
++ *    not apply if ispell is offered only as part of a larger, aggregated
++ *    product such as a word processor or packaged operating system.
++ * 5. The name of Geoff Kuenning may not be used to endorse or promote
++ *    products derived from this software without specific prior
++ *    written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY GEOFF KUENNING AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL GEOFF KUENNING OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++/*
++ * $Log$
++ * Revision 1.17  2001/07/25 21:51:47  geoff
++ * Minor license update.
++ *
++ * Revision 1.16  2001/07/23 20:24:04  geoff
++ * Update the copyright and the license.
++ *
++ * Revision 1.15  1999/01/07 01:58:02  geoff
++ * Update the copyright.
++ *
++ * Revision 1.14  1994/01/25  07:12:19  geoff
++ * Get rid of all old RCS log lines in preparation for the 3.1 release.
++ *
++ */
++
++#include <stdio.h>
++#include "msgs.h"
++
++#ifdef __STDC__
++#define P(x)	x
++#else /* __STDC__ */
++#define P(x)	()
++#endif /* __STDC__ */
++
++int		main P ((int argc, char * argv[]));
++static int	expand P ((char * word, char * prev));
++
++/*
++ * The following table encodes prefix sizes as a single character.  A
++ * matching table will be found in sq.c.
++ */
++static char size_encodings[] =
++    {
++    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',	/* 00-09 */
++    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',	/* 10-19 */
++    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',	/* 20-29 */
++    'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',	/* 30-39 */
++    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',	/* 40-49 */
++    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',	/* 50-59 */
++    'y', 'z'						/* 60-61 */
++    };
++
++#define MAX_PREFIX	(sizeof (size_encodings) - 1)
++
++extern void	exit P ((int status));
++
++int main (argc, argv)
++    int			argc;
++    char *		argv[];
++    {
++    char		word[257];
++    static char		prev[257] = "";
++
++    while (!expand (word, prev))
++        puts (word);
++    return 0;
++    }
++
++static int expand (word, prev) 
++    char *		word;
++    char *		prev;
++    {
++    register char *	wordp;
++    register char *	prevp;
++    register int	same_count;
++    register int	count_char;
++
++    count_char = getchar ();
++    if (count_char == EOF)
++	return(1);
++    for (same_count = 0;
++      same_count < MAX_PREFIX  &&  size_encodings[same_count] != count_char;
++      same_count++)
++	;
++    if (same_count == MAX_PREFIX)
++	{
++	(void) fprintf (stderr, UNSQ_C_BAD_COUNT, (unsigned int) count_char);
++	exit (1);
++	}
++    prevp = prev;
++    wordp = word;
++    while (same_count--)
++	*wordp++ = (*prevp++);
++    if (gets (wordp) == NULL)
++	{
++	(void) fprintf (stderr, UNSQ_C_SURPRISE_EOF);
++	exit (1);
++	}
++    (void) strcpy (prev, word);
++    return 0 ;
++    }
++
