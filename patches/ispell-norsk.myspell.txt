@@ -4,7 +4,7 @@ no warranty whatsoever. Based on Rune Kleveland's Norwegian ispell
 dictionaries, and covered by its licence (GPL). For more information,
 please refer to http://folk.uio.no/runekl/dictionary.html
 
-Nynorsk dictionary files have root "nn_NO" bokmål "no_NO".
+Nynorsk dictionary files have root "nn_NO"; bokmål "no_NO".
 
 Bokmål entry for dictionaries.lst:
 
