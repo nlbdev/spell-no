@@ -1,6 +1,6 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2005-02-09 12:46:23.000000000 +0100
-@@ -19,6 +19,10 @@
++++ ispell-3.2.06/languages/norsk/Makefile	2005-03-08 10:46:32.000000000 +0100
+@@ -19,29 +19,20 @@
  DICTIONARY	=	$(LANGUAGE).mch
  HASHFILE	=	$(LANGUAGE).hash
  
@@ -11,15 +11,22 @@
  #
  # The following variables may be overridden by the superior Makefile,
  # based on the LANGUAGES variable in config.X.
-@@ -33,15 +37,13 @@
+ #
+ AFFIXES	=	$(LANGUAGE).aff
  
- # Some technical variables for managing hyphen points and the header
- 
+-#
+-#	Set this to "-vx" in the make command line if you need to
+-#	debug the complex shell commands.
+-#
+-SHELLDEBUG = +vx
+-
+-# Some technical variables for managing hyphen points and the header
+-
 -# CATNOHEADER=sed -e '/^\#/ D' -e 's/[	]*\#.*//' ${LANGUAGE}.words
 -CATNOHEADER=grep -v '^\#' ${LANGUAGE}.words
- ALPHASUBST=tr '-' 'î'
- STREKSUBST=tr 'î' '-'
- 
+-ALPHASUBST=tr '-' 'î'
+-STREKSUBST=tr 'î' '-'
+-
  # What characters and flags do we use for Norwegian?
  
 -LCH=\"a-zæøåéêèóôòçî
@@ -29,7 +36,7 @@
  CH=${LCH}${UCH}
  PRE=a-s
  SUFFNORM=][t-zA-Z^
-@@ -50,7 +52,7 @@
+@@ -50,7 +41,7 @@
  #SUFF=][t-zA-Z\\\\\\\`^_
  
  
@@ -38,7 +45,7 @@
  # should be in the dictionary.  The line
  
  # /^[-${LCH}]{4}\[${SUFF}]/   {if ($$2>4) {print $$1,$$2}} 
-@@ -116,8 +118,7 @@
+@@ -116,8 +107,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
@@ -48,7 +55,16 @@
  
  # There is a system for selecting words to include in the Ispell
  # dictionary.  Unfortunately it is rather complex and not too easy to
-@@ -219,6 +220,12 @@
+@@ -174,7 +164,7 @@
+ CHOOSEROOTA=${DEFAULTROOTFILTER} # `newspaper' words, but very useful.
+ CHOOSEROOTN=${DEFAULTROOTFILTER} # Words from NOU
+ CHOOSEROOTM=${DEFAULTROOTFILTER} # Words from mathematics
+-CHOOSEROOTS=${DEFAULTROOTFILTER} # Samnorsk, dadical forms
++CHOOSEROOTS=${DEFAULTROOTFILTER} # Samnorsk, radical forms
+ CHOOSEROOTK=${DEFAULTROOTFILTER} # Conservative writing
+ CHOOSEROOTD=${DEFAULTROOTFILTER} # Words from Dagbladet
+ CHOOSEROOTO=${DEFAULTROOTFILTER} # Words from technical oil business
+@@ -219,6 +209,12 @@
  
  all: norsk.hash nynorsk.hash
  
@@ -61,7 +77,7 @@
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -268,8 +275,88 @@
+@@ -268,8 +264,92 @@
  	sed -e '/^prefixes.*/,//d' $< > $@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
@@ -75,10 +91,14 @@
 +
 +# MySpell support (6 Jun 2002, 26 Apr 2004 toralf@procaptura.com)
 +# *** FIXME: Also generate "TRY" line
++# Note: Among other things, the conversion involves a change from upper-case
++#       to lower-case. The script must be run under the correct language
++#       environment to make sure the case conversion is correct for all
++#       characters. 
 +define ISPELL2MYAFF
 +	echo "SET ISO8859-1" > $@
 +	echo "TRY aerndtislogmkpbhfjuvæøåyqxzvcwéèóôôçîAERNDTISLOGMKPBHFJUVÆØÅYQXZVCWÉÈÓÔÔÇ" >> $@
-+	perl iaff2myaff.pl $< >> $@
++	LANG=nb_NO perl iaff2myaff.pl $< >> $@
 +endef
 +
 +nb_NO.aff: norsk.aff
@@ -151,7 +171,7 @@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +364,6 @@
+@@ -277,7 +357,6 @@
  # improved.
  
  
@@ -159,7 +179,7 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,71 +373,51 @@
+@@ -287,71 +366,51 @@
  # Isn't it amazing how much you can do with sed?
  
  # If we try to munch the whole B dictionary in one run, ispell will
@@ -263,7 +283,7 @@
  	  | awk --source '\
  		{i = 1;\
  		s = 0;\
-@@ -360,21 +426,30 @@
+@@ -360,21 +419,30 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -303,7 +323,7 @@
  	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
  	  | tr '*' '\n' \
  	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-@@ -387,62 +462,70 @@
+@@ -387,62 +455,70 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -313,8 +333,8 @@
  	  > $@
 -#	Comment out the next line if you are debugging.
 -	rm munch[123].tmp
- 
 -
+ 
 -norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
  # Here we make the dictionary that is read by the ispell's builhash
  # program.  The main difficulty is to delete compound words with
@@ -396,7 +416,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,60 +539,56 @@
+@@ -456,60 +532,56 @@
  
  
  
@@ -471,7 +491,7 @@
  
  #	The following target is used in the English makefile, and is
  #	required to be present in all other language Makefiles as
-@@ -525,6 +604,6 @@
+@@ -525,6 +597,6 @@
  #	directories.
  #
  dictclean:
