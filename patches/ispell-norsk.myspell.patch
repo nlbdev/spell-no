@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2004-08-26 10:56:16.000000000 +0200
++++ ispell-3.2.06/languages/norsk/Makefile	2004-08-27 13:53:38.000000000 +0200
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -97,7 +97,7 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,65 +328,45 @@
+@@ -287,65 +328,44 @@
  # Isn't it amazing how much you can do with sed?
  
  # If we try to munch the whole B dictionary in one run, ispell will
@@ -164,13 +164,12 @@
 +	perl expndflg.pl $< | sort  '-t/' -u +0f -1 +0 > $@
 +
 +
-+#	perl -p -e 's/(e(t\/.*T.*|r\/.*I.*))V/$$1/; s/(e\/.*[TB].*)W/$$1/; s/([^ei]um\/.*B.*)I/$$1/; tr /î/-/; while(s/^(.*\/)(.*)(\S)/$$1$$2\n$$1$$3/) { }; s/zyzyzy/$$&\/` /i; s/^([^\/]+)\n/$$1\/ \n/' $< | sort  '-t/' -u +0f -1 +0 >$@
-+
-+# *** TODO:
-+#     Fjern /R i <ord>e/R if <ord>/[A-Zt-z] også finnes og <ord> ikke slutter
-+#     på er eller re
-+#     Fjern /E etter A og/eller B if <ord>er/AI også finnes
-+#     For a-s, ta med flagged foran de andre *og* på egen linje
++# *** Mulige problemer:
++#     /R og /E slettet en del steder flere steder en med gammel versjon. Det
++#     ser ut for meg som om det er riktig å fjerne flaggene på alle disse
++#     stedene.
++#     <ord>/ak ekspanderes til <ord>/a og <ord>/k, men *kanskje* er det riktig
++#     å beholde <ord>/ak
 +
 +munch3.%: munch2.% ${LANGUAGE}.words.plain ${LANGUAGE}.munch.hash
 +# This pipe produce a file containing the a line number of munch2 and
@@ -192,7 +191,7 @@
  	  | sed -e 's/\* //' \
  	  | cut -d ' ' -f2,3 \
  	  | sort -n \
-@@ -360,15 +381,18 @@
+@@ -360,15 +380,18 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -216,7 +215,7 @@
  	  | uniq \
  	  | tr -d ' ' \
  	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
-@@ -387,62 +411,71 @@
+@@ -387,62 +410,71 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -308,7 +307,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,11 +489,10 @@
+@@ -456,11 +488,10 @@
  
  
  
@@ -322,7 +321,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d '-' \
  	  | munchlist -v -l ny${AFFIXES}.munch \
-@@ -468,13 +500,12 @@
+@@ -468,13 +499,12 @@
  		-e '$$ p' -e '$$ d' -e P -e D \
  	  > $@ 
  
@@ -338,7 +337,7 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +513,17 @@
+@@ -482,19 +512,17 @@
  	  | sort -f \
  	  > $@
  
@@ -363,7 +362,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +534,11 @@
+@@ -505,11 +533,11 @@
  unpack:	norsk.words
  
  clean:
