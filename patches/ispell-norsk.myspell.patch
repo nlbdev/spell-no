@@ -59,7 +59,7 @@
 +# *** FIXME: Also generate "TRY" line
 +%-myspell.aff: %.aff
 +	echo "SET ISO8859-1" > $@
-+	echo "TRY aerndtislogmkpbhfjuvæcøåyqxzvwéèóôôçî" >> $@
++	echo "TRY aerndtislogmkpbhfjuvæøåyqxzvcwéèóôôçîAERNDTISLOGMKPBHFJUVÆØÅYQXZVCWÉÈÓÔÔÇ" >> $@
 +	perl iaff2myaff.perl $< >> $@
 +
 +# Note: mch.cnt is secondary output from buildhash
