@@ -1,11 +1,12 @@
 --- ispell-3.2.06/local.h.samp.norsk	Thu Jun  6 13:18:56 2002
-+++ ispell-3.2.06/local.h.samp	Thu Jun  6 13:20:04 2002
-@@ -106,7 +106,7 @@
++++ ispell-3.2.06/local.h.samp	Fri Jun  7 09:19:16 2002
+@@ -106,7 +106,8 @@
  
  #define MINIMENU	/* Display a mini-menu at the bottom of the screen */
  #define NO8BIT		/* Remove this if you use ISO character sets */
 -#undef USG		/* Define on System V or if term.c won't compile */
 +#define USG		/* Define on System V or if term.c won't compile */
++#define CFLAGS "-g"
  #undef NO_FCNTL_H	/* Define if you get compile errors on fcntl.h */
  #undef NO_MKSTEMP	/* Define if you get compile or link errors */
  
