@@ -1,6 +1,14 @@
---- ./ispell-3.2.06/languages/norsk/Makefile.myspell	2000-09-05 23:50:30.000000000 +0200
-+++ ./ispell-3.2.06/languages/norsk/Makefile	2003-09-23 18:34:28.000000000 +0200
-@@ -33,15 +33,13 @@
+--- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
++++ ispell-3.2.06/languages/norsk/Makefile	2003-09-24 10:58:28.000000000 +0200
+@@ -16,6 +16,7 @@
+ # numerous languages.
+ #
+ LANGUAGE	=	norsk
++LANGUAGE_CODE	=	no_NO
+ DICTIONARY	=	$(LANGUAGE).mch
+ HASHFILE	=	$(LANGUAGE).hash
+ 
+@@ -33,15 +34,13 @@
  
  # Some technical variables for managing hyphen points and the header
  
@@ -18,7 +26,7 @@
  CH=${LCH}${UCH}
  PRE=a-s
  SUFFNORM=][t-zA-Z^
-@@ -116,8 +114,7 @@
+@@ -116,8 +115,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
@@ -28,16 +36,18 @@
  
  # There is a system for selecting words to include in the Ispell
  # dictionary.  Unfortunately it is rather complex and not too easy to
-@@ -219,6 +216,8 @@
+@@ -219,6 +217,10 @@
  
  all: norsk.hash nynorsk.hash
  
 +myspell: norsk-myspell.aff norsk-myspell.dic nynorsk-myspell.aff nynorsk-myspell.dic 
 +
++myspell-dist: $(LANGUAGE_CODE).zip
++
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -269,7 +268,32 @@
+@@ -269,7 +271,47 @@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
  norsk.words: norsk.words.sq
@@ -58,6 +68,21 @@
 +norsk-myspell.dic nynorsk-myspell.dic: %-myspell.dic : %.mch.cnt %.mch 
 +	cat $^ > $@
 +
++
++$(LANGUAGE_CODE).zip: $(LANGUAGE_CODE)
++	zip -r -j $@ $<
++
++
++
++$(LANGUAGE_CODE): $(LANGUAGE)-myspell.aff $(LANGUAGE)-myspell.dic ny$(LANGUAGE)-myspell.aff ny$(LANGUAGE)-myspell.dic README.myspell
++	install -d -m 775 $@
++	install -m 444 $(LANGUAGE)-myspell.aff $@/$@.aff
++	install -m 444 $(LANGUAGE)-myspell.dic $@/$@.dic
++	install -m 444 ny$(LANGUAGE)-myspell.aff $@/$(subst no,nn,$@).aff
++	install -m 444 ny$(LANGUAGE)-myspell.dic $@/$(subst no,nn,$@).dic
++	install -m 444 README.myspell $@/README_$@.txt
++
++
 +# Create a "clean" version of wordlist, i.e. one that has no comments, blank
 +# lines, trailing whitespace etc., and that is resorted. This saves us from
 +# calling sed etc. to filter the wordlist every time it is used (like the
@@ -71,7 +96,7 @@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +301,6 @@
+@@ -277,7 +319,6 @@
  # improved.
  
  
@@ -79,13 +104,21 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,26 +310,22 @@
+@@ -287,26 +328,22 @@
  # Isn't it amazing how much you can do with sed?
  
  # If we try to munch the whole B dictionary in one run, ispell will
 -# probably dump core.  This happens when one gets `hash overflows'.
 -# Check the log, and change the splitting (^[${UCH}]) if nessesary.
 -# Nasty bug, and very silent.
+-	PATH=$(PATHADDER):$$PATH; \
+-	export PATH; \
+-	${CATNOHEADER} \
+-	  | grep -e '$(subst munched.,,$@)$$' \
+-	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+-	  | grep '^[${UCH}]' \
+-	  | munchlist -v -l ${AFFIXES}.munch \
+-	  > munch1.tmp
 -	PATH=$(PATHADDER):$$PATH; \
 +# probably dump core.  Nasty bug, and very silent
 +# Munch one starting character at a time to avoid this
@@ -99,14 +132,6 @@
 +	  echo "[$<, flag $*, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
 +	  egrep "^$$l.*$*$$" $< \
  	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
--	  | grep '^[${UCH}]' \
--	  | munchlist -v -l ${AFFIXES}.munch \
--	  > munch1.tmp
--	PATH=$(PATHADDER):$$PATH; \
--	export PATH; \
--	${CATNOHEADER} \
--	  | grep -e '$(subst munched.,,$@)$$' \
--	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
 -	  | grep -v '^[${UCH}]' \
 -	  | munchlist -v -l ${AFFIXES}.munch \
 -	  >> munch1.tmp
@@ -120,7 +145,7 @@
  	  | sed -e 's/\(zyzyzy\|ZYZYZY\)/\1\/\` /' \
  	  | sed -e 's/^\(.*\)$$/----\1\*\1/' | tr '*' '\n' \
  	  | sed -e '/----/ s/î//g' \
-@@ -333,19 +352,22 @@
+@@ -333,19 +370,22 @@
  		-e 's/^\([-${CH}]\+\)\/\([${PRE}]*\)\([${SUFF}]\+\)\([${SUFF}]\)/\1\/\2\3\*\1\/\2\4/' \
  		-e 't START' \
  		-e 's/^\([-${CH}]\+\)\/\([${PRE}]\+\)\(\*\|$$\)/\1\/\*\1\/\2\3/'\
@@ -148,7 +173,7 @@
  	  | sed -e 's/\* //' \
  	  | cut -d ' ' -f2,3 \
  	  | sort -n \
-@@ -360,15 +382,18 @@
+@@ -360,15 +400,18 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -172,7 +197,7 @@
  	  | uniq \
  	  | tr -d ' ' \
  	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
-@@ -387,62 +412,71 @@
+@@ -387,62 +430,71 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -264,7 +289,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,11 +490,10 @@
+@@ -456,11 +508,10 @@
  
  
  
@@ -278,7 +303,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d '-' \
  	  | munchlist -v -l ny${AFFIXES}.munch \
-@@ -468,13 +501,12 @@
+@@ -468,13 +519,12 @@
  		-e '$$ p' -e '$$ d' -e P -e D \
  	  > $@ 
  
@@ -294,7 +319,7 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +514,17 @@
+@@ -482,19 +532,17 @@
  	  | sort -f \
  	  > $@
  
@@ -319,7 +344,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +535,11 @@
+@@ -505,11 +553,11 @@
  unpack:	norsk.words
  
  clean:
