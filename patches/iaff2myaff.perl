@@ -9,6 +9,9 @@ foreach $fileName (@ARGV) {
 	    ($id, $combine, $compound, @rewrite)=parseFlag(\*FILE, $line);
 	    
 	    if($compound) {
+		print STDERR ("Warning: Compound affix \"$typeId $id\"",
+			      " commented out in output.\n");
+		
 		print("\n# *** FIXME: The following rule set is applicable\n");
 		print("#            to compounds only:\n");
 		print("# ", $typeId, " ", $id, " ", ($combine?"Y":"N"), " ",
@@ -17,16 +20,27 @@ foreach $fileName (@ARGV) {
 		    print("# ", $typeId, " ", $id, "   ", $r, "\n");
 		}
 	    } else {
-		print("\n", $typeId, " ", $id, " ", ($combine?"Y":"N"), " ",
-		      $#rewrite+1, "\n");
-		foreach $r (@rewrite) {
-		    print($typeId, " ", $id, "   ", $r, "\n");
+		if($#rewrite<0) {
+		    print STDERR ("Warning: No entries found for", 
+				  " \"$typeId $id\"; affix skipped.\n");
+		} else {
+		    print("\n", $typeId, " ", $id, " ", ($combine?"Y":"N"), " ",
+			  $#rewrite+1, "\n");
+		    foreach $r (@rewrite) {
+			print($typeId, " ", $id, "   ", $r, "\n");
+		    }
 		}
 	    }
 	} elsif($line=~m/suffixes/) {
 	    $typeId="SFX";
 	} elsif($line=~m/prefixes/) {
 	    $typeId="PFX";
+	} elsif($line=~m/compoundwords/) {
+	    ($compundFlag)=($line=~m/controlled\s*([A-Za-z])/);
+	    print("\nCOMPOUNDFLAG ", $compundFlag, "\n") if($compundFlag);
+	} elsif($line=~m/compoundmin/) {
+	    ($compundMin)=($line=~m/compoundmin\s*([0-9]+)/);
+	    print("\nCOMPOUNDMIN ", $compundMin, "\n") if($compundMin);
 	}
     }
     close(FILE, $fileName);
@@ -62,7 +76,7 @@ sub parseFlag {
 	if(!$add || $add eq "-") {
 	    $add="0";
 	}
-	push(@rules, "$remove\t$add\t$from");
+	push(@rules, "$remove  $add  $from");
 	do {
 	    chop($line=<$fileRef>);
 	} while($line && $line=~m/^\s*#/); # Handle lines "commented out" etc.
