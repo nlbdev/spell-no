@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2004-09-06 15:16:39.000000000 +0200
++++ ispell-3.2.06/languages/norsk/Makefile	2004-09-06 15:37:36.000000000 +0200
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -235,7 +235,7 @@
  	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
  	  | tr '*' '\n' \
  	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-@@ -387,62 +411,71 @@
+@@ -387,62 +411,70 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -245,8 +245,8 @@
  	  > $@
 -#	Comment out the next line if you are debugging.
 -	rm munch[123].tmp
- 
 -
+ 
 -norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
  # Here we make the dictionary that is read by the ispell's builhash
  # program.  The main difficulty is to delete compound words with
@@ -314,9 +314,10 @@
 +	cat -n $(filter-out %.mch,$^) \
 +	  | sort -n -m -s +0 -1 $< - \
  	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
- 	  | tr -d '\- 	0-9' \
- 	  > $@
+-	  | tr -d '\- 	0-9' \
+-	  > $@
 -	rm -f comp.hash comp[123].tmp*
++	  | tr -d '\- 	0-9' | LANG=nb_NO sort > $@
 +
 +
 +# Keep some of the  intermediate files from the above process to make
@@ -327,7 +328,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,11 +489,10 @@
+@@ -456,25 +488,23 @@
  
  
  
@@ -341,8 +342,9 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d '-' \
  	  | munchlist -v -l ny${AFFIXES}.munch \
-@@ -468,13 +500,12 @@
- 		-e '$$ p' -e '$$ d' -e P -e D \
+ 	  | sed -e N -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
+-		-e '$$ p' -e '$$ d' -e P -e D \
++		-e '$$ p' -e '$$ d' -e P -e D | LANG=nn_NO sort \
  	  > $@ 
  
 -words.norsk: norsk.words
@@ -357,7 +359,7 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +513,17 @@
+@@ -482,19 +512,17 @@
  	  | sort -f \
  	  > $@
  
@@ -382,7 +384,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +534,11 @@
+@@ -505,11 +533,11 @@
  unpack:	norsk.words
  
  clean:
