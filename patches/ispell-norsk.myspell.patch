@@ -1,5 +1,14 @@
 --- ispell-3.2.06/languages/norsk/Makefile.myspell	Tue Sep  5 23:50:30 2000
-+++ ispell-3.2.06/languages/norsk/Makefile	Thu Nov 21 15:09:15 2002
++++ ispell-3.2.06/languages/norsk/Makefile	Thu Nov 21 15:41:26 2002
+@@ -34,7 +34,7 @@
+ # Some technical variables for managing hyphen points and the header
+ 
+ # CATNOHEADER=sed -e '/^\#/ D' -e 's/[	]*\#.*//' ${LANGUAGE}.words
+-CATNOHEADER=grep -v '^\#' ${LANGUAGE}.words
++CATNOHEADER=grep -v '^\#' ${LANGUAGE}.words.plain
+ ALPHASUBST=tr '-' 'î'
+ STREKSUBST=tr 'î' '-'
+ 
 @@ -116,8 +116,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
@@ -98,6 +107,42 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
+@@ -456,7 +485,7 @@
+ 
+ 
+ 
+-nynorsk.mch: norsk.words ny${AFFIXES}.munch
++nynorsk.mch: norsk.words.plain ny${AFFIXES}.munch
+ 	PATH=$(PATHADDER):$$PATH; \
+ 	export PATH; \
+ 	${CATNOHEADER} \
+@@ -468,7 +497,7 @@
+ 		-e '$$ p' -e '$$ d' -e P -e D \
+ 	  > $@ 
+ 
+-words.norsk: norsk.words
++words.norsk: norsk.words.plain
+ # Here is a rule to make a list of the most common Norwegian words.
+ # Which words to include is defined at the top of this Makefile.  Such
+ # a file is needed to make the word competition work for Norwegian.
+@@ -482,7 +511,7 @@
+ 	  | sort -f \
+ 	  > $@
+ 
+-words.nynorsk: norsk.words
++words.nynorsk: norsk.words.plain
+ # No frequency information availiable yet for nynorsk.  So all we can
+ # do is poick the words marked with a star.
+ 	${CATNOHEADER} \
+@@ -491,7 +520,7 @@
+ 	  > $@ 
+ 
+ # Here is a target that picks words with given frequency.
+-words.${LANGUAGE}.%: ${LANGUAGE}.words
++words.${LANGUAGE}.%: ${LANGUAGE}.words.plain
+ 	${CATNOHEADER} \
+ 	  | grep '[BANDS]$$' \
+ 	  | grep  ' $(patsubst words.${LANGUAGE}.%,%,$@) ' \
 @@ -509,7 +538,7 @@
  	      ${DICTIONARY} ny${DICTIONARY} \
  	      ${AFFIXES} ny${AFFIXES} \
