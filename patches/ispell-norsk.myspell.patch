@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 13:12:04.000000000 +0100
++++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 15:28:09.000000000 +0100
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -344,7 +344,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,25 +494,21 @@
+@@ -456,60 +494,56 @@
  
  
  
@@ -375,7 +375,11 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -485,16 +519,15 @@
+ 	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
+-	  | sort -f \
++	  | LANG=nb_NO sort -f \
+ 	  > $@
+ 
  words.nynorsk: norsk.words
  # No frequency information availiable yet for nynorsk.  So all we can
  # do is poick the words marked with a star.
@@ -383,6 +387,7 @@
 +	grep -v '^\#' $<\
  	  | grep '\*' \
  	  | sed -e 's/ .*//' \
++	  | LANG=nn_NO sort -f \
  	  > $@ 
  
  # Here is a target that picks words with given frequency.
@@ -396,7 +401,11 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +538,11 @@
+-	  | sort -f \
++	  | LANG=nb_NO sort -f \
+ 	  > $@
+ 
+ 
  unpack:	norsk.words
  
  clean:
@@ -410,7 +419,7 @@
  
  #	The following target is used in the English makefile, and is
  #	required to be present in all other language Makefiles as
-@@ -525,6 +558,6 @@
+@@ -525,6 +559,6 @@
  #	directories.
  #
  dictclean:
