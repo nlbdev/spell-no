@@ -1,15 +1,16 @@
 --- ispell-3.2.06/languages/norsk/Makefile.myspell	Tue Sep  5 23:50:30 2000
-+++ ispell-3.2.06/languages/norsk/Makefile	Thu Jun  6 14:55:19 2002
-@@ -116,6 +116,8 @@
++++ ispell-3.2.06/languages/norsk/Makefile	Fri Jun  7 10:35:28 2002
+@@ -116,8 +116,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
-+# *** FIXME: I'm not able to build a useful dictionary with any value other
-+#            than 0 here; it looks like the wrong words are removed.
+-
+-COMPOUNDLIMIT=0
++COMPOUNDLIMIT=20
  
- COMPOUNDLIMIT=0
- 
-@@ -219,6 +221,8 @@
+ # There is a system for selecting words to include in the Ispell
+ # dictionary.  Unfortunately it is rather complex and not too easy to
+@@ -219,6 +218,8 @@
  
  all: norsk.hash nynorsk.hash
  
@@ -18,7 +19,7 @@
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -269,7 +273,29 @@
+@@ -269,7 +270,29 @@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
  norsk.words: norsk.words.sq
@@ -49,7 +50,7 @@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +303,7 @@
+@@ -277,7 +300,7 @@
  # improved.
  
  
@@ -58,7 +59,7 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -345,7 +371,7 @@
+@@ -345,7 +368,7 @@
  	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
  	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
  	  | sort \
@@ -67,7 +68,16 @@
  	  | sed -e 's/\* //' \
  	  | cut -d ' ' -f2,3 \
  	  | sort -n \
-@@ -437,8 +463,12 @@
+@@ -391,7 +414,7 @@
+ 	  | uniq \
+ 	  > $@
+ #	Comment out the next line if you are debugging.
+-	rm munch[123].tmp
++#	rm munch[123].tmp
+ 
+ 
+ norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
+@@ -437,12 +460,16 @@
  # Remove all the line numbers that is found twice, and all words
  # containing xxxx and yyyy.  Those words didn't fit in in the munching,
  # and since it is few words I don't want to fiddle with them.
@@ -81,7 +91,12 @@
  	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
  	  | tr -d '\- 	0-9' \
  	  > $@
-@@ -509,7 +539,7 @@
+-	rm -f comp.hash comp[123].tmp*
++#	rm -f comp.hash comp[123].tmp*
+ 
+ # TODO:
+ # If a rare word lies close to a common word, it might be wise to
+@@ -509,7 +536,7 @@
  	      ${DICTIONARY} ny${DICTIONARY} \
  	      ${AFFIXES} ny${AFFIXES} \
  	      ${AFFIXES}.munch ny${AFFIXES}.munch \
