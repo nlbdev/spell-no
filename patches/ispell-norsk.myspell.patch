@@ -469,10 +469,11 @@
 +}
 +
 --- ispell-3.2.06/languages/norsk/expndflg.pl.my	2004-08-26 13:25:45.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/expndflg.pl	2004-08-26 11:58:11.000000000 +0200
++++ ispell-3.2.06/languages/norsk/expndflg.pl	2004-08-27 13:32:56.000000000 +0200
 @@ -0,0 +1,57 @@
 +#!/usr/bin/perl
-+
++# Purpose: Expand list so that there is one line for each word/flag character 
++#          combination, and remove combinations that would lead to redundancies
 +# Remarks: This script is reverse-engineered from old, slow and messy sed/awk
 +#          commands in Makefile for "ispell norsk"
 +
@@ -489,8 +490,7 @@
 +	$line=~s/(e(t\/.*T.*|r\/.*I.*))V/$1/;
 +	$line=~s/(e\/.*[TB].*)W/$1/;
 +	$line=~s/([^ei]um\/.*B.*)I/$1/;
-+	$line=~s/zyzyzy/$&\/\`/;
-+
++	
 +	my($word, $flags)=split('/', $line);
 +	
 +	$flags=~s/^(.*[AB]|)E/$1/ if($nextLine=~m/^${word}er\/AI/);
@@ -498,11 +498,11 @@
 +	if(!$flags) {
 +	    # Note: Old sed scripts would print an extra ' ' after '/' in this
 +	    #       case; this may or may not be necessary
-+	    print($line, "/ \n");
-+	} elsif($flags eq "\`") {
-+	    print($line, " \n");
++	    print($word, "/");
++	    print("`") if($word=~m/zyzyzy$/);
++	    print(" \n");
 +	} else {
-+	    print($word, "/\n") if(!($flags=~m/^\`/));
++	    print($word, "/\n");
 +	    
 +	    # Note: The below 'm' operator will return $flags a list of letters
 +	    #       in $flags, as with 'g' a list if every possible match is
@@ -511,7 +511,7 @@
 +		print($word, "/");
 +		
 +		if(!($flag=~m/[a-s]/g)) {
-+		    foreach $prefix (($flags=~m/[a-s]g/)) {
++		    foreach $prefix (($flags=~m/[a-s]/g)) {
 +			print($prefix);
 +		    }
 +		}
