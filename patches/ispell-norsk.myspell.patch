@@ -1,14 +1,6 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2003-09-24 10:58:28.000000000 +0200
-@@ -16,6 +16,7 @@
- # numerous languages.
- #
- LANGUAGE	=	norsk
-+LANGUAGE_CODE	=	no_NO
- DICTIONARY	=	$(LANGUAGE).mch
- HASHFILE	=	$(LANGUAGE).hash
- 
-@@ -33,15 +34,13 @@
++++ ispell-3.2.06/languages/norsk/Makefile	2004-04-26 12:17:28.000000000 +0200
+@@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
  
@@ -26,7 +18,7 @@
  CH=${LCH}${UCH}
  PRE=a-s
  SUFFNORM=][t-zA-Z^
-@@ -116,8 +115,7 @@
+@@ -116,8 +114,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
  # `angrefrisperiode', but it consumes space and memory.
@@ -36,18 +28,18 @@
  
  # There is a system for selecting words to include in the Ispell
  # dictionary.  Unfortunately it is rather complex and not too easy to
-@@ -219,6 +217,10 @@
+@@ -219,6 +216,10 @@
  
  all: norsk.hash nynorsk.hash
  
-+myspell: norsk-myspell.aff norsk-myspell.dic nynorsk-myspell.aff nynorsk-myspell.dic 
++myspell: nb_NO.aff nb_NO.dic nn_NO.aff nn_NO.dic 
 +
-+myspell-dist: $(LANGUAGE_CODE).zip
++myspell-dist: nb_NO.zip nn_NO.zip
 +
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -269,7 +271,47 @@
+@@ -269,7 +270,48 @@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
  norsk.words: norsk.words.sq
@@ -55,33 +47,34 @@
 +	PATH=$(PATHADDER):$$PATH; \
 +	export PATH; unsq < norsk.words.sq > norsk.words
 +
-+# MySpell support (6 Jun 2002, toralf@kscanners.com)
++# MySpell support (6 Jun 2002, 26 Apr 2004 toralf@procaptura.com)
 +# *** FIXME: Also generate "TRY" line
-+%-myspell.aff: %.aff
++define ISPELL2MYAFF
 +	echo "SET ISO8859-1" > $@
 +	echo "TRY aerndtislogmkpbhfjuvæøåyqxzvcwéèóôôçîAERNDTISLOGMKPBHFJUVÆØÅYQXZVCWÉÈÓÔÔÇ" >> $@
 +	perl iaff2myaff.perl $< >> $@
++endef
++
++nb_NO.aff: norsk.aff
++	$(ISPELL2MYAFF)
++
++nn_NO.aff: nynorsk.aff
++	$(ISPELL2MYAFF)
 +
 +# Note: mch.cnt is secondary output from buildhash
 +norsk.mch.cnt nynorsk.mch.cnt: %.mch.cnt: %.hash
 +
-+norsk-myspell.dic nynorsk-myspell.dic: %-myspell.dic : %.mch.cnt %.mch 
++nb_NO.dic: norsk.mch.cnt norsk.mch
 +	cat $^ > $@
 +
++nn_NO.dic: nynorsk.mch.cnt nynorsk.mch
++	cat $^ > $@
 +
-+$(LANGUAGE_CODE).zip: $(LANGUAGE_CODE)
-+	zip -r -j $@ $<
++README_%.txt: README.myspell
++	cp $< $@
 +
-+
-+
-+$(LANGUAGE_CODE): $(LANGUAGE)-myspell.aff $(LANGUAGE)-myspell.dic ny$(LANGUAGE)-myspell.aff ny$(LANGUAGE)-myspell.dic README.myspell
-+	install -d -m 775 $@
-+	install -m 444 $(LANGUAGE)-myspell.aff $@/$@.aff
-+	install -m 444 $(LANGUAGE)-myspell.dic $@/$@.dic
-+	install -m 444 ny$(LANGUAGE)-myspell.aff $@/$(subst no,nn,$@).aff
-+	install -m 444 ny$(LANGUAGE)-myspell.dic $@/$(subst no,nn,$@).dic
-+	install -m 444 README.myspell $@/README_$@.txt
-+
++%.zip: %.dic %.aff README_%.txt
++	zip $@ $^
 +
 +# Create a "clean" version of wordlist, i.e. one that has no comments, blank
 +# lines, trailing whitespace etc., and that is resorted. This saves us from
