@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2004-09-06 15:37:36.000000000 +0200
++++ ispell-3.2.06/languages/norsk/Makefile	2004-11-16 14:32:05.000000000 +0100
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -201,7 +201,7 @@
  	  | awk --source '\
  		{i = 1;\
  		s = 0;\
-@@ -360,21 +381,24 @@
+@@ -360,21 +381,30 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -216,6 +216,11 @@
  # this Makefile.
 -	cat -n munch2.tmp \
 -	  | join - munch3.tmp \
++# Note: The below perl expression will print one line of the format
++#       <word>/<flag data list> based on "<word>/<flag data>" input lines. It
++#       will also collect prefix flags from <flag data>, and ensure each
++#       is mentioned only once in <flag data list> - hence the manipulation
++#       involving ${PRE}/$pre
 +	@echo "Collect data from $^ in $@"
 +	@cat -n munch2.$* \
 +	  | join - munch3.$* \
@@ -230,12 +235,13 @@
 -		-e 't START' -e P -e D \
 +	  | perl -e 'while(<>) { chop($$_); \
 +	     ($$w, $$f)=split("/", $$_); \
-+	     if($$w ne $$p) { print("\n") if($$p); print($$w, "/"); $$p=$$w };\
-+	     print("$$f") }; print("\n");' \
++	     if($$w ne $$p) { print("\n") if($$p); print($$w, "/"); $$p=$$w; undef $$pre; };\
++	     $$f=~s/[$$pre]//g if($$pre); $$pre.=($$f=~m/([${PRE}]+)/)[0]; print("$$f"); };\
++	     print("\n");' \
  	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
  	  | tr '*' '\n' \
  	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-@@ -387,62 +411,70 @@
+@@ -387,62 +417,70 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -328,7 +334,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,25 +488,23 @@
+@@ -456,25 +494,23 @@
  
  
  
@@ -359,7 +365,7 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +512,17 @@
+@@ -482,19 +518,17 @@
  	  | sort -f \
  	  > $@
  
@@ -384,7 +390,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +533,11 @@
+@@ -505,11 +539,11 @@
  unpack:	norsk.words
  
  clean:
