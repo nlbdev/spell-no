@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2004-09-06 13:05:10.000000000 +0200
++++ ispell-3.2.06/languages/norsk/Makefile	2004-09-06 14:18:14.000000000 +0200
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -97,21 +97,13 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,88 +328,67 @@
+@@ -287,71 +328,51 @@
  # Isn't it amazing how much you can do with sed?
  
  # If we try to munch the whole B dictionary in one run, ispell will
 -# probably dump core.  This happens when one gets `hash overflows'.
 -# Check the log, and change the splitting (^[${UCH}]) if nessesary.
 -# Nasty bug, and very silent.
--	PATH=$(PATHADDER):$$PATH; \
--	export PATH; \
--	${CATNOHEADER} \
--	  | grep -e '$(subst munched.,,$@)$$' \
--	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
--	  | grep '^[${UCH}]' \
--	  | munchlist -v -l ${AFFIXES}.munch \
--	  > munch1.tmp
 -	PATH=$(PATHADDER):$$PATH; \
 +# probably dump core.  Nasty bug, and very silent
 +# Munch one starting character at a time to avoid this
@@ -125,6 +117,14 @@
 +	  echo "[$<, flag $*, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
 +	  egrep "^$$l.*$*$$" $< \
  	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+-	  | grep '^[${UCH}]' \
+-	  | munchlist -v -l ${AFFIXES}.munch \
+-	  > munch1.tmp
+-	PATH=$(PATHADDER):$$PATH; \
+-	export PATH; \
+-	${CATNOHEADER} \
+-	  | grep -e '$(subst munched.,,$@)$$' \
+-	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
 -	  | grep -v '^[${UCH}]' \
 -	  | munchlist -v -l ${AFFIXES}.munch \
 -	  >> munch1.tmp
@@ -165,13 +165,12 @@
 +
 +
 +# *** Mulige problemer:
-+#     /R og /E slettet en del steder flere steder en med gammel versjon. Det
++#     /R og /E slettet en del flere steder enn med gammel versjon. Det
 +#     ser ut for meg som om det er riktig å fjerne flaggene på alle disse
 +#     stedene.
 +#     <ord>/ak ekspanderes til <ord>/a og <ord>/k, men *kanskje* er det riktig
 +#     å beholde <ord>/ak
 +
-+#  awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
 +
 +munch3.%: munch2.% ${LANGUAGE}.words.plain ${LANGUAGE}.munch.hash
 +# This pipe produce a file containing the a line number of munch2 and
@@ -184,36 +183,31 @@
 +	cat $< \
  	  | tr -d ' ' \
  	  | ispell -e -d ./${LANGUAGE}.munch.hash \
--	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
--	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
--	  | sort \
+ 	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
+ 	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
+ 	  | sort \
 -	  | join - ${LANGUAGE}.words \
-+	  | perl -e '$$i=0; while(<>) { chop($$_); s/^[-${CH}]\+ //; s/î/-/g; $$i++; foreach $$w (split(/ /, $$_)) { print($$w, " ", $$i, "\n"); }}' | sort \
-+          | join - ${LANGUAGE}.words.plain \
++	  | join - ${LANGUAGE}.words.plain \
  	  | sed -e 's/\* //' \
--	  | cut -d ' ' -f2,3 \
+ 	  | cut -d ' ' -f2,3 \
 -	  | sort -n \
-+	  | cut -d ' ' -f2,3 | sort -n \
- 	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
- 		-e 's/^\([0-9]\+\)\([0-9 ]\+\)\n\1\( [0-9]\+\)$$/\1\2\3/' \
- 		-e 't START' -e P -e D \
--	  | awk --source '\
--		{i = 1;\
--		s = 0;\
--		{while (i<NF)\
--		{i=i+1;\
--		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
--		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
--		print $$1, int(t)}' \
+-	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
+-		-e 's/^\([0-9]\+\)\([0-9 ]\+\)\n\1\( [0-9]\+\)$$/\1\2\3/' \
+-		-e 't START' -e P -e D \
++	  | sort -n | perl -e 'while(<>) { chop($$_); \
++	     ($$n, $$f)=split(/ /, $$_); \
++	     if($$n!=$$p) { print("\n") if($$p); print($$n); $$p=$$n }; \
++	     print(" $$f") }; print("\n");' \
+ 	  | awk --source '\
+ 		{i = 1;\
+ 		s = 0;\
+@@ -360,15 +381,18 @@
+ 		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
+ 		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
+ 		print $$1, int(t)}' \
 -	  > munch3.tmp
 -# This pipe produce the file containing the munched list of words,
-+	  | perl -e '\
-+	       $$i=1; $$s=0; \
-+	       while(<>) { \
-+	         ($$n)=(split(/ /, $$_)); $$i++; \
-+	         if($$i<5) { $$s+=$$i; } else { $$s+=exp(exp(($$i+9)/15)-1);};\
-+	         if($$s<=5) { $$t=$$s; } else { $$t=-9+15*log(1+log($$s));};\
-+	         print($$n, " ", int($$t), "\n");}' > $@
++	  > $@
 +
 +munched.%: munch2.% munch3.%
 +# This pipe produces the file containing the munched list of words,
@@ -231,7 +225,7 @@
  	  | uniq \
  	  | tr -d ' ' \
  	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
-@@ -387,62 +407,71 @@
+@@ -387,62 +411,71 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -241,8 +235,8 @@
  	  > $@
 -#	Comment out the next line if you are debugging.
 -	rm munch[123].tmp
- 
 -
+ 
 -norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
  # Here we make the dictionary that is read by the ispell's builhash
  # program.  The main difficulty is to delete compound words with
@@ -323,7 +317,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,11 +485,10 @@
+@@ -456,11 +489,10 @@
  
  
  
@@ -337,7 +331,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d '-' \
  	  | munchlist -v -l ny${AFFIXES}.munch \
-@@ -468,13 +496,12 @@
+@@ -468,13 +500,12 @@
  		-e '$$ p' -e '$$ d' -e P -e D \
  	  > $@ 
  
@@ -353,7 +347,7 @@
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +509,17 @@
+@@ -482,19 +513,17 @@
  	  | sort -f \
  	  > $@
  
@@ -378,7 +372,7 @@
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +530,11 @@
+@@ -505,11 +534,11 @@
  unpack:	norsk.words
  
  clean:
