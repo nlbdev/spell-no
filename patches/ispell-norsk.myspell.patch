@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2004-11-16 14:32:05.000000000 +0100
++++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 12:56:23.000000000 +0100
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -39,13 +39,17 @@
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -269,7 +270,48 @@
+@@ -268,8 +269,49 @@
+ 	sed -e '/^prefixes.*/,//d' $< > $@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
++# *** Hack: Do tricks here to include some missing words...
  norsk.words: norsk.words.sq
 -	unsq < norsk.words.sq > norsk.words
 +	PATH=$(PATHADDER):$$PATH; \
-+	export PATH; unsq < norsk.words.sq > norsk.words
++	export PATH; \
++	unsq < norsk.words.sq | sed "s/^å .*/å * 31 B/" > norsk.words
++	echo "i * 31 B" >> norsk.words
 +
 +# MySpell support (6 Jun 2002, 26 Apr 2004 toralf@procaptura.com)
 +# *** FIXME: Also generate "TRY" line
@@ -76,16 +80,13 @@
 +%.zip: %.dic %.aff README_%.txt
 +	zip $@ $^
 +
-+# Create a "clean" version of wordlist, i.e. one that has no comments, blank
-+# lines, trailing whitespace etc., and that is resorted. This saves us from
-+# calling sed etc. to filter the wordlist every time it is used (like the
-+# original version did) and it is also a good idea to make sure list is sorted
-+# in exactly the same way as generated files, 'join' command will otherwise
-+# work incorrectly.
-+# *** Hack: Do tricks here to include some missing words...
-+
-+%.words.plain: %.words
-+	(sed -e "s/#.*//" -e "s/^å .*/å * 31 B/" -e "s/[[:space:]]*$$//" $< | egrep -v "^$$"; echo "i * 31 B") | sort > $@
++# First of all, create a separate wordlist for each cathegory. It is sorted
++# exactly the same way as (other) generated data, as 'join' command will
++# otherwise work incorrectly.
++# Note:     Do not use pattern ("%") directly in target as it would pick up
++#           additional files like norsk.words.sq
++$(addprefix ${LANGUAGE}.words.,${CATHEGORIES}): ${LANGUAGE}.words.% : ${LANGUAGE}.words
++	sed -e "s/#.*//" -e "s/[[:space:]]*$$//" $< | egrep "$*$$" | sort > $@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
@@ -105,26 +106,26 @@
 -# Check the log, and change the splitting (^[${UCH}]) if nessesary.
 -# Nasty bug, and very silent.
 -	PATH=$(PATHADDER):$$PATH; \
+-	export PATH; \
+-	${CATNOHEADER} \
+-	  | grep -e '$(subst munched.,,$@)$$' \
+-	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+-	  | grep '^[${UCH}]' \
+-	  | munchlist -v -l ${AFFIXES}.munch \
+-	  > munch1.tmp
+-	PATH=$(PATHADDER):$$PATH; \
 +# probably dump core.  Nasty bug, and very silent
 +# Munch one starting character at a time to avoid this
-+munch1.%: ${LANGUAGE}.words.plain ${AFFIXES}.munch ${LANGUAGE}.munch.hash 
++munch1.%: ${LANGUAGE}.words.% ${AFFIXES}.munch ${LANGUAGE}.munch.hash 
 +	cat /dev/null > $@
 +	@PATH=$(PATHADDER):$$PATH; \
  	export PATH; \
 -	${CATNOHEADER} \
 -	  | grep -e '$(subst munched.,,$@)$$' \
 +	for l in `echo ${CH} | sed "s/./& /g"`; do \
-+	  echo "[$<, flag $*, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
-+	  egrep "^$$l.*$*$$" $< \
++	  echo "[$<, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
++	  egrep "^$$l" $< \
  	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
--	  | grep '^[${UCH}]' \
--	  | munchlist -v -l ${AFFIXES}.munch \
--	  > munch1.tmp
--	PATH=$(PATHADDER):$$PATH; \
--	export PATH; \
--	${CATNOHEADER} \
--	  | grep -e '$(subst munched.,,$@)$$' \
--	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
 -	  | grep -v '^[${UCH}]' \
 -	  | munchlist -v -l ${AFFIXES}.munch \
 -	  >> munch1.tmp
@@ -172,7 +173,7 @@
 +#     å beholde <ord>/ak
 +
 +
-+munch3.%: munch2.% ${LANGUAGE}.words.plain ${LANGUAGE}.munch.hash
++munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
 +# This pipe produce a file containing the a line number of munch2 and
  # the frequency indicator for that line.  Note that the summation rule
  # is not the usual one.
@@ -187,7 +188,7 @@
  	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
  	  | sort \
 -	  | join - ${LANGUAGE}.words \
-+	  | join - ${LANGUAGE}.words.plain \
++	  | join - ${LANGUAGE}.words.$* \
  	  | sed -e 's/\* //' \
  	  | cut -d ' ' -f2,3 \
 -	  | sort -n \
@@ -251,8 +252,8 @@
  	  > $@
 -#	Comment out the next line if you are debugging.
 -	rm munch[123].tmp
--
  
+-
 -norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
  # Here we make the dictionary that is read by the ispell's builhash
  # program.  The main difficulty is to delete compound words with
@@ -334,19 +335,19 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,25 +494,23 @@
+@@ -456,25 +494,21 @@
  
  
  
 -nynorsk.mch: norsk.words ny${AFFIXES}.munch
-+nynorsk.mch: norsk.words.plain ny${AFFIXES}.munch
++nynorsk.mch: words.nynorsk ny${AFFIXES}.munch
  	PATH=$(PATHADDER):$$PATH; \
  	export PATH; \
 -	${CATNOHEADER} \
 -	  | grep '\*' \
-+	grep '\*' < $< \
- 	  | sed -e 's/ .*//' \
- 	  | tr -d '-' \
+-	  | sed -e 's/ .*//' \
+-	  | tr -d '-' \
++	tr -d '-' < $< \
  	  | munchlist -v -l ny${AFFIXES}.munch \
  	  | sed -e N -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
 -		-e '$$ p' -e '$$ d' -e P -e D \
@@ -354,28 +355,24 @@
  	  > $@ 
  
 -words.norsk: norsk.words
-+words.norsk: norsk.words.plain
++words.norsk: $(addprefix norsk.words.,B A N D S)
  # Here is a rule to make a list of the most common Norwegian words.
  # Which words to include is defined at the top of this Makefile.  Such
  # a file is needed to make the word competition work for Norwegian.
  # Stupid spell checkers might also want such a file.
 -	${CATNOHEADER} \
 -	  | grep '[BANDS]$$' \
-+	grep '[BANDS]$$' < $< \
++	cat $^ \
  	  | tr -d '*' \
  	  | awk --re-interval --source ${WORDSFILTER} \
  	  | tr -d '\"-' \
-@@ -482,19 +518,17 @@
- 	  | sort -f \
- 	  > $@
- 
--words.nynorsk: norsk.words
-+words.nynorsk: norsk.words.plain
+@@ -485,16 +519,15 @@
+ words.nynorsk: norsk.words
  # No frequency information availiable yet for nynorsk.  So all we can
  # do is poick the words marked with a star.
 -	${CATNOHEADER} \
--	  | grep '\*' \
-+	grep '\*' < $<\
++	grep -v '^\#' $<\
+ 	  | grep '\*' \
  	  | sed -e 's/ .*//' \
  	  > $@ 
  
@@ -384,13 +381,13 @@
 -	${CATNOHEADER} \
 -	  | grep '[BANDS]$$' \
 -	  | grep  ' $(patsubst words.${LANGUAGE}.%,%,$@) ' \
-+words.${LANGUAGE}.%: ${LANGUAGE}.words.plain
-+	grep '[BANDS]$$' < $< \
++words.${LANGUAGE}.%: $(addprefix ${LANGUAGE}.words.,B A N D S)
++	cat $^\
 +	  | grep  ' $* ' \
  	  | sed -e 's/ .*//' \
  	  | tr -d - \
  	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
-@@ -505,11 +539,11 @@
+@@ -505,11 +538,11 @@
  unpack:	norsk.words
  
  clean:
@@ -404,6 +401,14 @@
  
  #	The following target is used in the English makefile, and is
  #	required to be present in all other language Makefiles as
+@@ -525,6 +558,6 @@
+ #	directories.
+ #
+ dictclean:
+-	rm -f $(patsubst %,munched.%,${CATHEGORIES}) \
++	rm -f $(addprefix munch*.,${CATHEGORIES}) \
+ 	      words.${LANGUAGE}
+ 
 --- ispell-3.2.06/languages/norsk/iaff2myaff.pl.my	2004-08-26 13:23:08.000000000 +0200
 +++ ispell-3.2.06/languages/norsk/iaff2myaff.pl	2004-04-26 12:54:24.000000000 +0200
 @@ -0,0 +1,88 @@
