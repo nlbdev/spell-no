@@ -54,8 +54,8 @@ sub parseFlag {
     $comp=1 if($line=~m/~/);
     ($id)=($line=~m/flag.*(.)\s*:/);
     
-    # Skip to rules...
-    while(chop($line=<$fileRef>) && $line=~m/^\s*#/) { # Skip comments etc.
+    # Skip initial comments/blank lines...
+    while(chop($line=<$fileRef>) && $line=~m/^\s*(\#|$)/) { 
     }
 
     while($line=~m/>/) {
