@@ -1,5 +1,5 @@
 --- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 12:56:23.000000000 +0100
++++ ispell-3.2.06/languages/norsk/Makefile	2005-02-08 13:12:04.000000000 +0100
 @@ -33,15 +33,13 @@
  
  # Some technical variables for managing hyphen points and the header
@@ -18,6 +18,15 @@
  CH=${LCH}${UCH}
  PRE=a-s
  SUFFNORM=][t-zA-Z^
+@@ -50,7 +48,7 @@
+ #SUFF=][t-zA-Z\\\\\\\`^_
+ 
+ 
+-# The awk scripts below tells which words from in each category that
++# The awk scripts below tells which words from each category that
+ # should be in the dictionary.  The line
+ 
+ # /^[-${LCH}]{4}\[${SUFF}]/   {if ($$2>4) {print $$1,$$2}} 
 @@ -116,8 +114,7 @@
  
  # In sum; It is nice if ispell can make a suggestion words like
@@ -501,7 +510,7 @@
 +}
 +
 --- ispell-3.2.06/languages/norsk/expndflg.pl.my	2004-08-26 13:25:45.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/expndflg.pl	2004-08-27 13:32:56.000000000 +0200
++++ ispell-3.2.06/languages/norsk/expndflg.pl	2005-02-08 13:10:28.000000000 +0100
 @@ -0,0 +1,57 @@
 +#!/usr/bin/perl
 +# Purpose: Expand list so that there is one line for each word/flag character 
@@ -536,9 +545,9 @@
 +	} else {
 +	    print($word, "/\n");
 +	    
-+	    # Note: The below 'm' operator will return $flags a list of letters
-+	    #       in $flags, as with 'g' a list if every possible match is
-+	    #       returned, and '.' matches any single character.
++	    # Note: The below 'm' operator will return a list of letters
++	    #       in $flags, since a list if every possible match is returned
++	    #       when using 'g' flag, and '.' matches any single character.
 +	    foreach $flag (($flags=~m/./g)) {
 +		print($word, "/");
 +		
