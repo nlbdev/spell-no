@@ -165,9 +165,9 @@
 +
 +
 +# *** Mulige problemer:
-+#     /R og /E slettet en del steder flere steder en med gammel versjon. Det
-+#     ser ut for meg som om det er riktig å fjerne flaggene på alle disse
-+#     stedene.
++#     /R og /E slettet en del flere steder en med gammel versjon. Det ser ut
++#     for meg som om det er riktig å fjerne flaggene på alle disse stedene.
++#     
 +#     <ord>/ak ekspanderes til <ord>/a og <ord>/k, men *kanskje* er det riktig
 +#     å beholde <ord>/ak
 +
