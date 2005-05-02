@@ -1,5 +1,5 @@
---- ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/Makefile	2005-03-08 10:46:32.000000000 +0100
+--- ./ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
++++ ./ispell-3.2.06/languages/norsk/Makefile	2005-05-02 12:52:07.000000000 +0200
 @@ -19,29 +19,20 @@
  DICTIONARY	=	$(LANGUAGE).mch
  HASHFILE	=	$(LANGUAGE).hash
@@ -126,7 +126,7 @@
 +aspell:
 +	install -d -m 775 $@
 +
-+aspell/%.dat: aspell
++aspell/%.dat: aspell-%.info.in
 +	rm -f $@
 +	sed -n -e 's/^lang/name/p' -e 's/^doc_encoding/charset/p' $^ > $@
 +	echo "special \" -*- . -*-" >> $@
@@ -499,8 +499,8 @@
 +	rm -f $(addprefix munch*.,${CATHEGORIES}) \
  	      words.${LANGUAGE}
  
---- ispell-3.2.06/languages/norsk/iaff2myaff.pl.my	2004-08-26 13:23:08.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/iaff2myaff.pl	2004-04-26 12:54:24.000000000 +0200
+--- /dev/null	2003-01-30 11:24:37.000000000 +0100
++++ ./ispell-3.2.06/languages/norsk/iaff2myaff.pl	2005-05-02 11:56:09.000000000 +0200
 @@ -0,0 +1,88 @@
 +#!/usr/bin/perl
 +use locale;			# For lc() to handle non-ASCII charcters
@@ -590,8 +590,8 @@
 +    return ($id, $comb, $comp, @rules);
 +}
 +
---- ispell-3.2.06/languages/norsk/expndflg.pl.my	2004-08-26 13:25:45.000000000 +0200
-+++ ispell-3.2.06/languages/norsk/expndflg.pl	2005-02-08 13:10:28.000000000 +0100
+--- /dev/null	2003-01-30 11:24:37.000000000 +0100
++++ ./ispell-3.2.06/languages/norsk/expndflg.pl	2005-05-02 11:56:09.000000000 +0200
 @@ -0,0 +1,57 @@
 +#!/usr/bin/perl
 +# Purpose: Expand list so that there is one line for each word/flag character 
@@ -650,8 +650,8 @@
 +    }
 +    close(FILE);
 +}
---- ispell-3.2.06/languages/norsk/aspell-nn.info.in.my	2005-02-09 12:43:17.000000000 +0100
-+++ ispell-3.2.06/languages/norsk/aspell-nn.info.in	2005-02-09 12:24:31.000000000 +0100
+--- /dev/null	2003-01-30 11:24:37.000000000 +0100
++++ ./ispell-3.2.06/languages/norsk/aspell-nn.info.in	2005-05-02 11:56:09.000000000 +0200
 @@ -0,0 +1,19 @@
 +name_english Norwegian Nynorsk
 +lang nn
@@ -672,8 +672,8 @@
 +dict:
 +  name nn
 +  add nn
---- ispell-3.2.06/languages/norsk/aspell-nb.info.in.my	2005-02-09 12:43:20.000000000 +0100
-+++ ispell-3.2.06/languages/norsk/aspell-nb.info.in	2005-02-09 13:30:39.000000000 +0100
+--- /dev/null	2003-01-30 11:24:37.000000000 +0100
++++ ./ispell-3.2.06/languages/norsk/aspell-nb.info.in	2005-05-02 11:56:09.000000000 +0200
 @@ -0,0 +1,19 @@
 +name_english Norwegian Bokmal
 +lang nb
