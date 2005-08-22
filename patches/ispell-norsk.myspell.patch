@@ -1,5 +1,5 @@
 --- ./ispell-3.2.06/languages/norsk/Makefile.my	2000-09-05 23:50:30.000000000 +0200
-+++ ./ispell-3.2.06/languages/norsk/Makefile	2005-05-02 12:52:07.000000000 +0200
++++ ./ispell-3.2.06/languages/norsk/Makefile	2005-05-02 15:05:37.000000000 +0200
 @@ -19,29 +19,20 @@
  DICTIONARY	=	$(LANGUAGE).mch
  HASHFILE	=	$(LANGUAGE).hash
@@ -77,7 +77,24 @@
  install: install-norsk install-nynorsk install-scripts
  
  install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
-@@ -268,8 +264,92 @@
+@@ -251,15 +247,7 @@
+ norsk.aff nynorsk.aff: %.aff: %.aff.in
+ 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
+ 
+-norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
+-	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
+-	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
+-	    -e 's/\(^flag  *\)~\(..\?:\)/\1\2/'  \
+-	    -e 's/^\(compoundwords\) controlled z/\1 off/' $< \
+-	 > $@
+-	@echo -e '\n\nflag z: # Brukes for å bevare z-flagg gjennom munchlist\n    .              >       YYYY            # *HACK*' >> $@
+-
+-norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff.munch
++norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff
+ 	echo 'QQQQQQQQ' > FAKEDICT
+ 	${BUILDHASH} -s FAKEDICT $< $@
+ 	rm -f FAKEDICT FAKEDICT.cnt FAKEDICT.stat
+@@ -268,8 +256,92 @@
  	sed -e '/^prefixes.*/,//d' $< > $@
  	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
  
@@ -171,7 +188,7 @@
  
  # The following ugly code munches a part of the base file, keeping the
  # indications of the frequency of the words.  It also removes some
-@@ -277,7 +357,6 @@
+@@ -277,7 +349,6 @@
  # improved.
  
  
@@ -179,10 +196,11 @@
  # The first pipe produces a list of all words in the % category, with
  # each root word followed by one line for each flag containing the
  # root word and the flag.  The prefix flags are treated as part of the
-@@ -287,71 +366,51 @@
+@@ -286,72 +357,51 @@
+ # when the list is sorted.  Some redundant flags are also removed.
  # Isn't it amazing how much you can do with sed?
  
- # If we try to munch the whole B dictionary in one run, ispell will
+-# If we try to munch the whole B dictionary in one run, ispell will
 -# probably dump core.  This happens when one gets `hash overflows'.
 -# Check the log, and change the splitting (^[${UCH}]) if nessesary.
 -# Nasty bug, and very silent.
@@ -195,18 +213,10 @@
 -	  | munchlist -v -l ${AFFIXES}.munch \
 -	  > munch1.tmp
 -	PATH=$(PATHADDER):$$PATH; \
-+# probably dump core.  Nasty bug, and very silent
-+# Munch one starting character at a time to avoid this
-+munch1.%: ${LANGUAGE}.words.% ${AFFIXES}.munch ${LANGUAGE}.munch.hash 
-+	cat /dev/null > $@
-+	@PATH=$(PATHADDER):$$PATH; \
- 	export PATH; \
+-	export PATH; \
 -	${CATNOHEADER} \
 -	  | grep -e '$(subst munched.,,$@)$$' \
-+	for l in `echo ${CH} | sed "s/./& /g"`; do \
-+	  echo "[$<, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
-+	  egrep "^$$l" $< \
- 	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+-	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
 -	  | grep -v '^[${UCH}]' \
 -	  | munchlist -v -l ${AFFIXES}.munch \
 -	  >> munch1.tmp
@@ -239,8 +249,18 @@
 -		-e 's/^\([-${CH}]\+\)\/\([${PRE}]\+\)\(\*\|$$\)/\1\/\*\1\/\2\3/'\
 -	  |  tr '*' '\n' > munch2.tmp
 -# This pipe produce a file containing the a line number of munch2.tmp and
-+	  | munchlist -l ${AFFIXES}.munch >> $@ ; \
-+	done
++# ispell's 'munchlist' does not work very well here. Among other things, it
++# will probably fail with a stack overflow on the B dictionary. We therefore
++# use the 'munch' utility from MySpell instead; its source code is expected to
++# be available on this directory
++
++munch0.%: ${LANGUAGE}.words.%
++	rm -f $@
++	wc -l < $< > $@
++	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
++
++$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff 
++	./$^ 2> /dev/null | tail +2 > $@
 +
 +munch2.%: munch1.%
 +	perl expndflg.pl $< | sort  '-t/' -u +0f -1 +0 > $@
@@ -265,7 +285,8 @@
 +	cat $< \
  	  | tr -d ' ' \
  	  | ispell -e -d ./${LANGUAGE}.munch.hash \
- 	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
+-	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
++	  | sed -e 's/^[-${CH}]\+ //' \
  	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
  	  | sort \
 -	  | join - ${LANGUAGE}.words \
@@ -283,7 +304,7 @@
  	  | awk --source '\
  		{i = 1;\
  		s = 0;\
-@@ -360,21 +419,30 @@
+@@ -360,21 +410,30 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -323,7 +344,7 @@
  	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
  	  | tr '*' '\n' \
  	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-@@ -387,62 +455,70 @@
+@@ -387,62 +446,70 @@
  		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
  		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
  		print $$1, int(t)}' \
@@ -416,7 +437,7 @@
  
  # TODO:
  # If a rare word lies close to a common word, it might be wise to
-@@ -456,60 +532,56 @@
+@@ -456,60 +523,56 @@
  
  
  
@@ -491,7 +512,7 @@
  
  #	The following target is used in the English makefile, and is
  #	required to be present in all other language Makefiles as
-@@ -525,6 +597,6 @@
+@@ -525,6 +588,6 @@
  #	directories.
  #
  dictclean:
