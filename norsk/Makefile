@@ -1,0 +1,530 @@
+# Makefile for the Norwegian dictionary for Ispell v. 2.0
+# Copyright (C) 2000, Rune Kleveland
+#
+# Maintainer: Rune Kleveland
+# Email : runekl@math.uio.no
+# License : GPL
+
+SHELL = /bin/sh
+MAKE = make
+
+CONFIG		=	../../config.sh
+PATHADDER	=	../..
+BUILDHASH	=	../../buildhash
+
+# The following variables make it easy to adapt this Makefile to
+# numerous languages.
+#
+LANGUAGE	=	norsk
+DICTIONARY	=	$(LANGUAGE).mch
+HASHFILE	=	$(LANGUAGE).hash
+
+#
+# The following variables may be overridden by the superior Makefile,
+# based on the LANGUAGES variable in config.X.
+#
+AFFIXES	=	$(LANGUAGE).aff
+
+#
+#	Set this to "-vx" in the make command line if you need to
+#	debug the complex shell commands.
+#
+SHELLDEBUG = +vx
+
+# Some technical variables for managing hyphen points and the header
+
+# CATNOHEADER=sed -e '/^\#/ D' -e 's/[	]*\#.*//' ${LANGUAGE}.words
+CATNOHEADER=grep -v '^\#' ${LANGUAGE}.words
+ALPHASUBST=tr '-' 'î'
+STREKSUBST=tr 'î' '-'
+
+# What characters and flags do we use for Norwegian?
+
+LCH=\"a-zæøåéêèóôòçî
+UCH=A-ZÆØÅÉÊÈÓÔÒÇÎ
+CH=${LCH}${UCH}
+PRE=a-s
+SUFFNORM=][t-zA-Z^
+SUFFCOMP=\\\\\\\`_
+SUFF=${SUFFNORM}${SUFFCOMP}
+#SUFF=][t-zA-Z\\\\\\\`^_
+
+
+# The awk scripts below tells which words from in each category that
+# should be in the dictionary.  The line
+
+# /^[-${LCH}]{4}\[${SUFF}]/   {if ($$2>4) {print $$1,$$2}} 
+
+# says that words with length 4 containing only lowercase letters with
+# frequency greater then 5 should be included.  Edit the scripts as
+# you like, but please don't make syntactic errors.  Awk forgives
+# nothing.  Remember that it is more likely that a mistyping turns out
+# to be a legal word if the word is short.  `re' is legal!
+
+# The CHOOSEFLAG script sets the limit for flag inclusion.  Example:
+# adgangs-tegn is a common word, but the form adgangstegnenes scores 0
+# on frequency.  It will be excluded by the script below if you don't
+# change it.
+
+# The CHOOSEROOT script selects the root words to be included after
+# the uncommonly used flags have been deleted.  The key used is the
+# frequency category of of the union of all words this root and its
+# flags generates.
+
+# The reason for the two pass system is that the space required by a
+# root word is much bigger than what is required by just a flag.
+
+# You are of course free to change the selection system.
+
+# The B file contains all kinds of words.
+
+
+CATHEGORIES=B A N M S K D O C
+
+# Configuration for the words file.
+
+# The words file is a plain text file containing words in alphabetical
+# order.  It is used by ispell via the look/grep programs to display
+# words starting with a specific string or matching a specific
+# pattern.  It is also useful if one want to make a dictionary for
+# some stupid spell-checker in a word processor.
+
+# Lets make this simple.
+
+WORDSFILTER='{if ($$2>9) {print $$1}}'
+
+# Configuration for building ispell dictionaries.
+
+# The frequency category works best for B, A and N categories.
+
+# Very young people and people which don't speak Norwegian natively
+# will probably be much more happy with a smaller dictionary than the
+# complete one.  A smaller dictionary should also be considered if the
+# machine is low on memory.  Below is a quite advanced system for
+# building such dictionaries.
+
+# It is possible to remove all words that is accepted by ispell in
+# controlled compoundwords mode with frequency indicator less than
+# COMPOUNDLIMIT.  Thus if `naturvern' and `direktorat' are words which
+# is marked as allowed in compounds, it might not be nessesary to
+# include `naturverndirektorat' in the dictionary.
+
+# However, if one misspells `naturverndirektorat', ispell will not be
+# able to make a suggestion for this word.  And one must use the
+# controlled compoundwords mode to accept this word, and that is not
+# as secure as the -B mode.
+
+# In sum; It is nice if ispell can make a suggestion words like
+# `angrefrisperiode', but it consumes space and memory.
+
+COMPOUNDLIMIT=0
+
+# There is a system for selecting words to include in the Ispell
+# dictionary.  Unfortunately it is rather complex and not too easy to
+# use, but this was what I came up with, so you must use it or invent
+# your own.  The good thing is that one can select both flags and
+# roots, depending on how the root word looks line and the frequency
+# og all forms coming from the flag or the root.
+
+# Somewhere in the long pipe making the input file for buildhash, the
+# data looks like
+#
+# gutte-drøm/ 17
+# gutte-drøm/A 18
+# gutte-drøm/E 14
+# gutte-drøm/G 7
+#
+# thus the frequenzy indicator for each flag is availiable.  Awk is
+# used to pick the flags we want, and the variable holding the program
+# is CHOOSEFLAG[CATHEGORY]. Don't throw away the root, since that
+# messes things up badly.
+#
+# Later in the pipe the data looks like
+#
+# gutte-drøm/17A18E14G7 19
+#
+# The second field (19) is the frequenzy indicator for all words
+# comming from the root gutt.  So here we can throw away a root with
+# all its derivied forms if we like.
+
+DEFAULTROOTFILTER='{print $$1,$$2}' # This selects all words in a file
+
+# Don't include all rare words allowed in compounds.
+
+define DEFAULTFLAGFILTER
+'!/[${SUFFCOMP}]/      {print $$1,$$2} \
+/\/[${SUFFCOMP}]/      {if ($$2>6) {print $$1,$$2}}'
+endef
+
+# Select all words by default.  Then override with more elaborate
+# rules if desired.
+
+
+CHOOSEFLAGB=${DEFAULTFLAGFILTER} # Normal words
+CHOOSEFLAGA=${DEFAULTFLAGFILTER} # `newspaper' words, but very useful.
+CHOOSEFLAGN=${DEFAULTFLAGFILTER} # Words from NOU
+CHOOSEFLAGM=${DEFAULTFLAGFILTER} # Words from mathematics
+CHOOSEFLAGS=${DEFAULTFLAGFILTER} # Samnorsk, radical forms
+CHOOSEFLAGK=${DEFAULTFLAGFILTER} # Conservative writing
+CHOOSEFLAGD=${DEFAULTFLAGFILTER} # Words from Dagbladet
+CHOOSEFLAGO=${DEFAULTFLAGFILTER} # Words from technical oil business
+CHOOSEFLAGC=${DEFAULTFLAGFILTER} # Sammendragning
+
+CHOOSEROOTB=${DEFAULTROOTFILTER} # Normal words
+CHOOSEROOTA=${DEFAULTROOTFILTER} # `newspaper' words, but very useful.
+CHOOSEROOTN=${DEFAULTROOTFILTER} # Words from NOU
+CHOOSEROOTM=${DEFAULTROOTFILTER} # Words from mathematics
+CHOOSEROOTS=${DEFAULTROOTFILTER} # Samnorsk, dadical forms
+CHOOSEROOTK=${DEFAULTROOTFILTER} # Conservative writing
+CHOOSEROOTD=${DEFAULTROOTFILTER} # Words from Dagbladet
+CHOOSEROOTO=${DEFAULTROOTFILTER} # Words from technical oil business
+CHOOSEROOTC=${DEFAULTROOTFILTER} # Sammendragning
+
+# Here is an example of an awk script that excludes some short
+# uncommon words, and some long very uncommon words.  It is most
+# likely that you want to exclude short uncommon words, since those
+# are most likely to be typed by mistake.  Exclude long words to save
+# memory.  Also see the COMPOUNDLIMIT variable above if you want to
+# make a resource-friendly dictionary.
+
+# define CHOOSEFLAGB
+# '/\/[ ${PRE}]/                                  {print $$1,$$2}  \
+# /^[-${LCH}]{1,2}\/[${SUFF}]/        {if ($$2>6) {print $$1,$$2}} \
+# /^[-${LCH}]{3}\/[${SUFF}]/          {if ($$2>5) {print $$1,$$2}} \
+# /^[-${LCH}]{4}\/[${SUFF}]/          {if ($$2>3) {print $$1,$$2}} \
+# /^[-${LCH}]{5,7}\/[${SUFF}]/        {if ($$2>1) {print $$1,$$2}} \
+# /^[-${LCH}]{8,}\/[${SUFF}]/         {if ($$2>=0) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{1,2}\/[${SUFF}]/ {if ($$2>4) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{3}\/[${SUFF}]/   {if ($$2>3) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{4}\/[${SUFF}]/   {if ($$2>2) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{5,7}\/[${SUFF}]/ {if ($$2>1) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{8,}\/[${SUFF}]/  {if ($$2>=0) {print $$1,$$2}}'
+# endef
+
+# define CHOOSEROOTB
+# '/^[-${LCH}]{1,2}\//       {if ($$2>8) {print $$1,$$2}} \
+# /^[-${LCH}]{3}\//          {if ($$2>6) {print $$1,$$2}} \
+# /^[-${LCH}]{4}\//          {if ($$2>5) {print $$1,$$2}} \
+# /^[-${LCH}]{5,7}\//        {if ($$2>2) {print $$1,$$2}} \
+# /^[-${LCH}]{8,}\//         {if ($$2>1) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{1,2}\// {if ($$2>8) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{3}\//   {if ($$2>6) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{4}\//   {if ($$2>3) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{5,7}\// {if ($$2>2) {print $$1,$$2}} \
+# /^[${UCH}][-${CH}]{8,}\//  {if ($$2>1) {print $$1,$$2}}'
+# endef
+
+
+
+
+all: norsk.hash nynorsk.hash
+
+install: install-norsk install-nynorsk install-scripts
+
+install-norsk install-nynorsk: install-%: %.hash $(CONFIG)
+	@. $(CONFIG); \
+	  set -x; \
+	  [ -d $$LIBDIR ]  ||  (mkdir $$LIBDIR; chmod 755 $$LIBDIR); \
+	  cd $$LIBDIR; rm -f $(subst .hash,.aff,$<) $<
+	@. $(CONFIG); \
+	  set -x; \
+	  cp $(subst .hash,.aff,$<) $< $$LIBDIR
+	@. $(CONFIG); \
+	  set -x; \
+	  cd $$LIBDIR; \
+	  chmod 644 $(subst .hash,.aff,$<) $<
+
+install-scripts:  inorsk-compwordsmaybe inorsk-hyphenmaybe $(CONFIG)
+	@. $(CONFIG); \
+	  set -x; \
+	  [ -d $$BINDIR ]  ||  (mkdir $$BINDIR; chmod 755 $$BINDIR); \
+	  cd $$BINDIR; \
+	  rm -f inorsk-compwordsmaybe inorsk-hyphenmaybe
+	@. ${CONFIG}; \
+	  set -x; \
+	  $$INSTALL inorsk-compwordsmaybe inorsk-hyphenmaybe $$BINDIR
+
+norsk.hash nynorsk.hash: %.hash: %.mch %.aff ${BUILDHASH}
+	rm -f $@
+	${BUILDHASH} $< $(subst .hash,.aff,$@) $@
+
+norsk.aff nynorsk.aff: %.aff: %.aff.in
+	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
+
+norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
+	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
+	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
+	    -e 's/\(^flag  *\)~\(..\?:\)/\1\2/'  \
+	    -e 's/^\(compoundwords\) controlled z/\1 off/' $< \
+	 > $@
+	@echo -e '\n\nflag z: # Brukes for å bevare z-flagg gjennom munchlist\n    .              >       YYYY            # *HACK*' >> $@
+
+norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff.munch
+	echo 'QQQQQQQQ' > FAKEDICT
+	${BUILDHASH} -s FAKEDICT $< $@
+	rm -f FAKEDICT FAKEDICT.cnt FAKEDICT.stat
+
+norsk.aff.null nynorsk.aff.null: %.aff.null: %.aff.in
+	sed -e '/^prefixes.*/,//d' $< > $@
+	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
+
+norsk.words: norsk.words.sq
+	unsq < norsk.words.sq > norsk.words
+
+# The following ugly code munches a part of the base file, keeping the
+# indications of the frequency of the words.  It also removes some
+# redundant flags that munchlist does not find.  That part could be
+# improved.
+
+
+munched.%: norsk.words norsk.aff.munch norsk.munch.hash
+# The first pipe produces a list of all words in the % category, with
+# each root word followed by one line for each flag containing the
+# root word and the flag.  The prefix flags are treated as part of the
+# root word, except that there is one line containing just the root
+# word (the last bug I catched...) The hyphen character is ignored
+# when the list is sorted.  Some redundant flags are also removed.
+# Isn't it amazing how much you can do with sed?
+
+# If we try to munch the whole B dictionary in one run, ispell will
+# probably dump core.  This happens when one gets `hash overflows'.
+# Check the log, and change the splitting (^[${UCH}]) if nessesary.
+# Nasty bug, and very silent.
+	PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	${CATNOHEADER} \
+	  | grep -e '$(subst munched.,,$@)$$' \
+	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+	  | grep '^[${UCH}]' \
+	  | munchlist -v -l ${AFFIXES}.munch \
+	  > munch1.tmp
+	PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	${CATNOHEADER} \
+	  | grep -e '$(subst munched.,,$@)$$' \
+	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+	  | grep -v '^[${UCH}]' \
+	  | munchlist -v -l ${AFFIXES}.munch \
+	  >> munch1.tmp
+	cat munch1.tmp \
+	  | sed -e 's/\(zyzyzy\|ZYZYZY\)/\1\/\` /' \
+	  | sed -e 's/^\(.*\)$$/----\1\*\1/' | tr '*' '\n' \
+	  | sed -e '/----/ s/î//g' \
+	  | sed -e N -e 's/\n/ ----/' \
+	  | sort  '-t/' -u +0f -1 +0 \
+	  | sed -e 's/.*----//' \
+	  | sed -e 's/\(et\/.*T.*\)V/\1/' \
+		-e 's/\(e\/.*T.*\)W/\1/' \
+		-e 's/\(er\/.*I.*\)V/\1/' \
+		-e 's/\(e\/.*B.*\)W/\1/' \
+		-e 's/\([^ei]um\/.*B.*\)I/\1/' \
+	  | sed -e N -e 's/^\(\([-${CH}]\)*\([^e][^r]\|[e][^r]\|[r][^e]\)\)\/\([A-Zt-z]*\)\n\1e\/\([A-Zt-z]*\)R\([A-Zt-z]*\)$$/\1\/\4\*\1e\/\5\6/g' \
+		 -e '$$ p' -e '$$ d' -e P -e D \
+	  | tr '*' '\n' \
+	  | sed -e N -e 's/^\(\([-${CH}]\)*\)\(\/[AB]*\)E\(.*\)\n\1er\/AI/\1\3\4\*\1er\/AI/' \
+		-e '$$ p' -e '$$ d' -e P -e D \
+	  | tr '*' '\n' \
+	  | ${STREKSUBST} \
+	  | sed -e 's/\/\([${SUFF}]*\)\([${PRE}]*\)/\/\2\1/' \
+		-e 's/\(\([-${CH}]\)*\)\/\([${PRE}]*\)\([${SUFF}]\+\)$$/\1\/\3\*\1\/\3\4/' \
+		-e 's/^\([-${CH}]*\)$$/\1\/ /' \
+	  | tr '*' '\n' \
+	  | sed -e ':START' \
+		-e 's/^\([-${CH}]\+\)\/\([${PRE}]*\)\([${SUFF}]\+\)\([${SUFF}]\)/\1\/\2\3\*\1\/\2\4/' \
+		-e 't START' \
+		-e 's/^\([-${CH}]\+\)\/\([${PRE}]\+\)\(\*\|$$\)/\1\/\*\1\/\2\3/'\
+	  |  tr '*' '\n' > munch2.tmp
+# This pipe produce a file containing the a line number of munch2.tmp and
+# the frequency indicator for that line.  Note that the summation rule
+# is not the usual one.
+	PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	cat munch2.tmp \
+	  | tr -d ' ' \
+	  | ispell -e -d ./${LANGUAGE}.munch.hash \
+	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
+	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
+	  | sort \
+	  | join - ${LANGUAGE}.words \
+	  | sed -e 's/\* //' \
+	  | cut -d ' ' -f2,3 \
+	  | sort -n \
+	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
+		-e 's/^\([0-9]\+\)\([0-9 ]\+\)\n\1\( [0-9]\+\)$$/\1\2\3/' \
+		-e 't START' -e P -e D \
+	  | awk --source '\
+		{i = 1;\
+		s = 0;\
+		{while (i<NF)\
+		{i=i+1;\
+		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
+		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
+		print $$1, int(t)}' \
+	  > munch3.tmp
+# This pipe produce the file containing the munched list of words,
+# where the rare words we don't want are removed.  What we don't want
+# depends on the category of words, and is defined at the start of
+# this Makefile.
+	cat -n munch2.tmp \
+	  | join - munch3.tmp \
+	  | cut -d ' ' -f2,3 \
+	  | awk --re-interval --source ${$(subst munched.,CHOOSEFLAG,$@)} \
+	  | uniq \
+	  | tr -d ' ' \
+	  | sed -e '$$ p' -e '$$ D' -e ':START' -e '$$ ! N' \
+		-e 's/^\(\([-${CH}]\)\+\)\/\([0-9]*\)\n\1\/\([${SUFF}${PRE}0-9]*\)$$/\1\/\3\4/' \
+		-e 's/^\(\([-${CH}]\)\+\/\)\([0-9]*\)\([${PRE}]*\)\([${SUFF}0-9]*\)\n\1\4\([${SUFF}0-9]\+\)$$/\1\3\4\5\6/' \
+		-e 't START' -e P -e D \
+	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
+	  | tr '*' '\n' \
+	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
+	  | sed -e N -e 's/\n//' \
+	  | awk --source '\
+		{i = 1;\
+		s = 0;\
+		{while (i<NF)\
+		{i++;\
+		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
+		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
+		print $$1, int(t)}' \
+	  | awk --re-interval --source ${$(subst munched.,CHOOSEROOT,$@)} \
+	  | uniq \
+	  > $@
+#	Comment out the next line if you are debugging.
+	rm munch[123].tmp
+
+
+norsk.mch: forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) $(AFFIXES)
+# Here we make the dictionary that is read by the ispell's builhash
+# program.  The main difficulty is to delete compound words with
+# frequency indicator less than COMPOUNDLIMIT accepted in controlled
+# compoundwords mode.
+
+# First make a list of words with some compound flag, and a hash-file.
+	cat forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) \
+	  | tr -d '\-0-9 ' \
+	  | grep "\/.*[z\\_\`]" \
+	  > comp1.tmp
+	$(BUILDHASH) comp1.tmp $(AFFIXES) comp.hash
+
+# Make a list of candidates to be removed.  Exclude all words with
+# compound flags and those with frequency indicator bigger than
+# COMPOUNDLIMIT.  This could be improved.  One could insist that the
+# words forming a word that should be deleted are separated by a
+# hyphen at the correct point.  That would complicate things.
+
+	cat -n forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) \
+	  | grep -v "\/.*[z\\_\`]" \
+	  | awk --source '/-/ {if ($$3<${COMPOUNDLIMIT}) {print $$1,$$2,$$3}}' \
+	  > comp2.tmp
+# Test which words are accepted by ispell.  Output is a list of line
+# numbers indicating the lines that can be removed from the munched
+# file.
+	PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	cat comp2.tmp \
+	  | tr -d '\-0-9 ' \
+	  | ispell -e -d ./comp.hash \
+	  | sed -e 's/$$/ xyxyxyxy/' \
+	  | ispell -l -d ./comp.hash \
+	  | sed -e 's/xyxyxyxy/î/' \
+	  | tr '\nî' ' \n' \
+	  | paste comp2.tmp - \
+	  | grep '	 $$' \
+	  | sed -e 's/ .*//' \
+	  > comp3.tmp
+	@echo Removing `cat comp3.tmp | wc -l` compound root words
+# Remove all the line numbers that is found twice, and all words
+# containing xxxx and yyyy.  Those words didn't fit in in the munching,
+# and since it is few words I don't want to fiddle with them.
+	cat -n forkort.txt $(patsubst %,munched.%,${CATHEGORIES}) \
+	  | sort -n -m -s +0 -1  comp3.tmp - \
+	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
+	  | tr -d '\- 	0-9' \
+	  > $@
+	rm -f comp.hash comp[123].tmp*
+
+# TODO:
+# If a rare word lies close to a common word, it might be wise to
+# remove it from the dictionary.  One possible way is to use a patched
+# version of ispell that tries to find matches for all words, also
+# those in the dictionary.  Then find the frequency for those words,
+# and produce a closeness index from this.  This shouldn't be too hard
+# to implement.  The patch for the required ispell flag (-s) is only
+# a few lines.  The trickery to use it is more.
+
+
+
+
+nynorsk.mch: norsk.words ny${AFFIXES}.munch
+	PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	${CATNOHEADER} \
+	  | grep '\*' \
+	  | sed -e 's/ .*//' \
+	  | tr -d '-' \
+	  | munchlist -v -l ny${AFFIXES}.munch \
+	  | sed -e N -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
+		-e '$$ p' -e '$$ d' -e P -e D \
+	  > $@ 
+
+words.norsk: norsk.words
+# Here is a rule to make a list of the most common Norwegian words.
+# Which words to include is defined at the top of this Makefile.  Such
+# a file is needed to make the word competition work for Norwegian.
+# Stupid spell checkers might also want such a file.
+	${CATNOHEADER} \
+	  | grep '[BANDS]$$' \
+	  | tr -d '*' \
+	  | awk --re-interval --source ${WORDSFILTER} \
+	  | tr -d '\"-' \
+	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
+	  | sort -f \
+	  > $@
+
+words.nynorsk: norsk.words
+# No frequency information availiable yet for nynorsk.  So all we can
+# do is poick the words marked with a star.
+	${CATNOHEADER} \
+	  | grep '\*' \
+	  | sed -e 's/ .*//' \
+	  > $@ 
+
+# Here is a target that picks words with given frequency.
+words.${LANGUAGE}.%: ${LANGUAGE}.words
+	${CATNOHEADER} \
+	  | grep '[BANDS]$$' \
+	  | grep  ' $(patsubst words.${LANGUAGE}.%,%,$@) ' \
+	  | sed -e 's/ .*//' \
+	  | tr -d - \
+	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
+	  | sort -f \
+	  > $@
+
+
+unpack:	norsk.words
+
+clean:
+	rm -f core *.hash *.stat *.cnt munch[123].tmp \
+	      ${DICTIONARY} ny${DICTIONARY} \
+	      ${AFFIXES} ny${AFFIXES} \
+	      ${AFFIXES}.munch ny${AFFIXES}.munch \
+	      comp[123].tmp*
+
+#	The following target is used in the English makefile, and is
+#	required to be present in all other language Makefiles as
+#	well, even though it doesn't have to do anything in those
+#	directories.
+#
+kitclean:
+
+#
+#	The following target is used in the English makefile, and is
+#	required to be present in all other language Makefiles as
+#	well, even though it doesn't have to do anything in those
+#	directories.
+#
+dictclean:
+	rm -f $(patsubst %,munched.%,${CATHEGORIES}) \
+	      words.${LANGUAGE}
+

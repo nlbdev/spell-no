@@ -1,0 +1,567 @@
+README-file for the distribution of the Norwegian dictionaries for ISPELL.
+
+DESCRIPTION
+
+This distribution contains a big collection of Norwegian words (both
+bokmål and nynorsk) and support files to make useful things from it.
+
+The main file norsk.source contains 747500 words from the Norwegian
+language.  Each word has a commonness indicator, and it is hyphenated
+at compound points.
+
+There is also a Makefile to assist in building dictionaries for Ispell
+and other word processors, using a sensible subset of the available
+words.  There is also a Makefile in the patterns directory which makes
+hyphenation patterns for TeX based on the dictionary and a simple set
+of hyphenation patterns that works on non-compound words.
+
+The latest version is available at
+
+http://www.uio.no/~runekl/dictionary.html
+
+Comments, suggestions and bug-reports to runekl@math.uio.no.
+
+
+
+
+BUILDING A NORWEGIAN ISPELL DICTIONARY
+
+* Get the ispell sources and unpack it.
+
+  cd /source
+  tar -zxvf ispell-3.1.20.tar.gz
+
+  You can also unpack the sources for the Norwegian dictionary now:
+
+  cd ispell-3.1/languages
+  tar -zxvf ispell-norsk-2.0.tar.gz
+
+* Patch Ispell
+
+  I have made a patch for ispell based mainly on other patches found
+  on the net.  If you think you have found a bug in ispell, please
+  make sure that it has nothing to do with this patch before
+  reporting it to the ispell manager!
+
+  The following things are done:
+  
+  1. An attempt is made to fix the backslash bug.  The patch for this
+     was found at Ken Stevens ispell.el site.
+  
+  2. Ispell can now parse html files thanks to a patch by Gerry
+     Tierney.  Basically this means that a patched copy of ispell will
+     ignore any mark-up tags or html entities in a html document when
+     spell checking that document.  Any text inside an 'alt' attribute
+     will however be checked.
+  
+     Examples: ispell index.html     # html tags will be ignored
+               ispell -h README      # html tags will be ignored
+               ispell -n index.html  # html tags will be spell-checked
+
+     I have not been able to make the html mode work well when using
+     ispell from emacs.  That doesn't matter too much, since ispell.el
+     has its own skipping mechanism.
+  
+  3. Buildhash now accepts all characters between A and z as flags,
+     not only the alphanumeric ones when MASKBITS=64.  This is needed
+     by the Norwegian affix file.
+  
+  4. The AMS and breqn math environments are now skipped by ispell.
+  
+  5. Ispell gets the ability to suggest "- as a separation character
+     in addition to - and space.  This only happens if such support is
+     compiled in, e.g. the COMPOUNDBABEL flag must be defined, and it
+     only happens in TeX mode and if the language is norsk.  It is
+     useful to mark compound points in words to ensure good
+     hyphenation when using LaTeX with Babel.  The Norwegian
+     hyphenation patterns distributed in this package hyphenate almost
+     every word in the Ispell dictionary correctly, but no guaranty is
+     offered for other compound words.
+
+  6. Added an -r switch, which is almost like the -a switch, but the
+     suggestions are printed even if the word is found in the
+     dictionary.  This is useful for hyphenating words and for
+     eliminating rare words close to very common words.  There has to
+     be some german out there wanting to make TeX hyphenate only
+     compound words.
+
+  7. Added a patch from the Redhat rpm to avoid compilation error in
+     ijoin.c.
+  
+  So if you are feeling a little brave;
+
+  cd ispell-3.1
+  patch < languages/norsk/ispell-3.1.20.no.patch
+
+  Additional patches might be needed on various systems.  The Redhat
+  source RPM is a good place to look if something fails.
+
+* CONFIGURE ISPELL The file Config.X in the ispell-3.1 distribution
+  contains configuration information for ispell (no ./configure yet).
+  The definitions are overridden by those in the file local.h, for
+  which there is a local.h.samp.  The following local.h works for me
+  on my Redhat-6.0 system.  You have to adopt the file to those
+  languages you have dictionaries for.
+
+-----------------------------------------------------------------------
+#define MINIMENU        /* Display a mini-menu at the bottom of the screen */
+#define USG             /* Define this on System V */
+
+#define BINDIR  "/usr/bin"
+#define LIBDIR  "/usr/lib"
+#define MAN1DIR "/usr/man/man1"
+#define MAN4DIR "/usr/man/man4"
+
+#define LANGUAGES "{american,MASTERDICTS=american.med+,HASHFILES=americanmed+.ha
+sh,EXTRADICT=/usr/dict/words} {norsk}"
+#define MASKBITS 64
+#define LOOK     "look"
+#define CFLAGS   "-O3"  /* Mostly to speed up my batch operations */
+#define LDFLAGS  "-s"
+#define COMPOUNDBABEL
+-----------------------------------------------------------------------
+
+  It might be wise to try to build ispell only for English, to test that
+  everything works, and add new languages afterwards.
+
+  cd ispell-3.1
+  make all
+
+  This takes some time, but almost nothing compared to building the
+  Norwegian dictionary.
+
+* ADD LANGUAGES
+
+  Get dictionaries for the languages you want to install from the
+  ispell home page.  Unpack them in the appropriate directories.
+  Update the LANGUAGES variable in local.h and remake.
+
+  Make sure that there is enough free space to build the dictionary.
+  If it isn't the build process will loose miserabely. About 120 MB is
+  needed!
+
+  The Norwegian dictionary can be configured.  You can choose which
+  categories of words to include, and how common a word has to be to
+  be included.  This is documented in the Makefile in languages/norsk.
+  This flexibility has its price; it takes a very long time and a lot
+  of disk space to build the dictionary, up to 120Mb.
+
+  You can also customize the affix file to remove or add some forms of
+  words.  For example you could choose to allow or disallow the
+  spelling `komitéen'.  To do this you can make the file norsk.aff,
+  edit it according to your needs, and make norsk.hash afterwards.
+  Look for the word `valgfritt' in the file.  Bear in mind that
+  norsk.aff will is dependent on norsk.aff.in, so if you touch that
+  file your version will be overwritten.  It will not work as expected
+  to change norsk.aff.in.
+
+* INSTALL
+
+  Before you install, you might want to test if ispell works.
+
+  cd languages/norsk
+  echo vurderingskriterier | ../../ispell -a -d norsk.hash
+
+  should find vurderingskriterium.  Then
+
+  make install
+
+
+USING THE DICTIONARY
+
+CHARACTER SETS
+
+By default ispell assumes you use latin-1 encoding in your Norwegian
+files.  To spell-check such a file you just say
+
+ispell -d norsk mythesis.tex
+
+In TeX you can use `{\aa}', `{\oe}', `{\o}', `\'e', `\'o' and `\^o' to
+represent the special Norwegian characters.  If you do this, you have
+to say
+
+ispell -T plaintex -d norsk mythesis.tex
+
+to spell-check a file.  The characters æøåéòô will not be recognized
+then, so unfortunately you have to choose one standard.  If you use
+`\aa{}' etc. instead, you should change the affix file or add a
+similar entry in the affix file.
+
+In a plain ASCII file `æ ø å' are sometimes represented `ae oe aa'.
+Use
+
+ispell -T ascii -d norsk mythesis.tex
+
+to spell-check such a file.
+
+The iso246 encoding puts æøå after z in the collating sequence.
+If you use this encoding, say
+
+ispell -T iso246 -d norsk mythesis.tex
+
+Does anybody use this??
+
+
+COMPOUND WORDS
+
+The use of compound words is what makes it both fun and difficult to
+produce a good and secure ispell dictionary and to make hyphenation
+patterns for TeX.
+
+Ispell has two very important switches, -B and -C, controlling whether
+ispell accepts words formed by a root and another word as correct.  If
+the -C flag is given, ispell will accept words as
+`avdelingsbestyrerstilling', which is right, but also words as
+`premierene' (premie-rene), which is wrong.  It is *not recommended*
+to use the -C option with the Norwegian dictionary, since far to many
+incorrect spellings will be accepted.
+
+If you don't give the -B or -C flag, ispell will accept compound words
+formed by a small subset of the words in the dictionary. The subset
+depends on the configuration variables in the Makefile. This is called
+controlled compoundwords mode.  It is even more safe to give the -B
+option, such that only words in the dictionary are regarded as
+correct.  I would do that if I had written something important.
+
+The hyphenation patterns for TeX are only tested on words in the
+dictionary, so these patterns might fail on compound words accepted in
+controlled compoundwords mode.  If you want to be absolutely certain
+that there will be no bad hyphens in your document, you have to use
+the -B switch.  See `The hyphenation problem' below.
+
+
+FIGHTING `ORD DELINGS SYNDROMET'
+
+Most spell checkers, including ispell, suggest to split compound words
+it doesn't find in its dictionary.  If people follow these suggestions
+blindly, the result is disaster; they get spelling errors in the
+actual document and even worse; they think they have learned the
+correct spelling! (arkitekt tegnet hus i Holmenkoll åsen...)
+
+I have done two things to fight this.  Ispell suggests `"-' in
+addition to `-' and ` ' for compound words, which tells TeX that here
+is a compound point and makes the spell-check skip the word next time.
+
+The second thing is more important.  The script inorsk-maybecompound
+searches a document (or standard input) for two and three words
+following each other that can be written in one word, hyphenates them
+using TeX and prints the compound words to standard output.  By
+hyphenating one avoids words like sommer (som mer), forlenge (for
+lenge) etc.  Use it!
+
+
+EMACS
+
+The version of `ispell.el' distributed with emacs-19.34 does not
+support Norwegian.  I suggest you get the latest ispell.el from
+ftp://kdstevens.com/pub/stevens/ispell.el.gz.  Good versions are also
+found in emacs-20.[4567].
+
+So make sure that your version of ispell.el uses the variable
+ispell-local-dictionary-alist, and put a suitable subset of the
+following in your .emacs file:
+
+(setq
+ ispell-local-dictionary-alist
+ '(("norsk"                             ; 8 bit Norwegian mode
+    "[A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[^A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[\".,;:]" t ("-B" "-S" "-d" "norsk") "~list" iso-8859-1)
+   ("norsk7-tex"                        ; 7 bit Norwegian TeX mode
+    "[A-Za-z{}\\'^`@]" "[^A-Za-z{}\\'^`@]"
+    "[\".,;:]" t ("-B" "-S" "-d" "norsk" "-T" "plaintex") "~plaintex" nil)
+   ("norsk7-html"                       ; 7 bit Norwegian html mode
+    "[A-Za-z\&;]" "[^A-Za-z\&;]"        ; Don't use ispell's html-parser
+    "[.,:]" t ("-B" "-S" "-n" "-d" "norsk") "~html" iso-8859-1)
+   ("norsk7-ascii"                      ; 7 bit Norwegian (aa, ae, oe)
+    "[A-Za-z]" "[^A-Za-z]"
+    "[\".,;:]" t ("-B" "-S" "-d" "norsk") "~ascii" iso-8859-1)
+    ("norsk7-iso246" "[][A-Za-z{}|\\]" "[^][A-Za-z{}|\\]"
+     "[\".,;:]" nil ("-B" "-S" "-d" "norsk")  "~iso246" iso-8859-1)
+   ("norsk-comp"                        ; 8 bit Norwegian mode
+    "[A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[^A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[\".,;:]" t ("-S" "-d" "norsk") "~list" iso-8859-1)
+   ("norsk7-tex-comp"                   ; 7 bit Norwegian TeX mode
+    "[A-Za-z{}\\'^`@]" "[^A-Za-z{}\\'^`@]"
+    "[\".,;:]" t ("-S" "-d" "norsk" "-T" "plaintex") "~plaintex" nil)
+   ("norsk7-html-comp"                  ; 7 bit Norwegian html mode
+    "[A-Za-z\&;]" "[^A-Za-z\&;]"        ; Don't use ispell's html-parser
+    "[.,:]" t ("-S" "-n" "-d" "norsk") "~html" iso-8859-1)
+   ("norsk7-ascii-comp"                 ; 7 bit Norwegian (aa, ae, oe)
+    "[A-Za-z]" "[^A-Za-z]"
+    "[\".,;:]" t ("-S" "-d" "norsk") "~ascii" iso-8859-1)
+    ("norsk7-iso246" "[][A-Za-z{}|\\]" "[^][A-Za-z{}|\\]"
+     "[\".,;:]" nil ("-B" "-S" "-d" "norsk")  "~iso246" iso-8859-1)
+("nynorsk"                             ; 8 bit Norwegian mode
+    "[A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[^A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[\".,;:]" t ("-B" "-S" "-d" "nynorsk") "~list" iso-8859-1)
+   ("nynorsk7-tex"                        ; 7 bit Norwegian TeX mode
+    "[A-Za-z{}\\'^`@]" "[^A-Za-z{}\\'^`@]"
+    "[\".,;:]" t ("-B" "-S" "-d" "nynorsk" "-T" "plaintex") "~plaintex" nil)
+   ("nynorsk7-html"                       ; 7 bit Norwegian html mode
+    "[A-Za-z\&;]" "[^A-Za-z\&;]"        ; Don't use ispell's html-parser
+    "[.,:]" t ("-B" "-S" "-n" "-d" "nynorsk") "~html" iso-8859-1)
+   ("nynorsk7-ascii"                      ; 7 bit Norwegian (aa, ae, oe)
+    "[A-Za-z]" "[^A-Za-z]"
+    "[\".,;:]" t ("-B" "-S" "-d" "nynorsk") "~ascii" iso-8859-1)
+    ("nynorsk7-iso246" "[][A-Za-z{}|\\]" "[^][A-Za-z{}|\\]"
+     "[\".,;:]" nil ("-B" "-S" "-d" "nynorsk")  "~iso246" iso-8859-1)
+   ("nynorsk-comp"                        ; 8 bit Norwegian mode
+    "[A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[^A-Za-z\305\306\307\310\311\322\323\324\330\345\346\347\350\351\362\363\364\370]"
+    "[\".,;:]" t ("-S" "-d" "nynorsk") "~list" iso-8859-1)
+   ("nynorsk7-tex-comp"                   ; 7 bit Norwegian TeX mode
+    "[A-Za-z{}\\'^`@]" "[^A-Za-z{}\\'^`@]"
+    "[\".,;:]" t ("-S" "-d" "nynorsk" "-T" "plaintex") "~plaintex" nil)
+   ("nynorsk7-html-comp"                  ; 7 bit Norwegian html mode
+    "[A-Za-z\&;]" "[^A-Za-z\&;]"        ; Don't use ispell's html-parser
+    "[.,:]" t ("-S" "-n" "-d" "nynorsk") "~html" iso-8859-1)
+   ("nynorsk7-ascii-comp"                 ; 7 bit Norwegian (aa, ae, oe)
+    "[A-Za-z]" "[^A-Za-z]"
+    "[\".,;:]" t ("-S" "-d" "nynorsk") "~ascii" iso-8859-1)
+    ("nynorsk7-iso246" "[][A-Za-z{}|\\]" "[^][A-Za-z{}|\\]"
+     "[\".,;:]" nil ("-B" "-S" "-d" "nynorsk")  "~iso246" iso-8859-1)
+   ))
+
+(load-library "ispell")
+
+The above is very unpretty indeed.  It is basically four copies of the
+same list.  If you come up with something better, please let me know.
+I am a terrible lisp programmer!
+
+As you see there are a lot of entries.  The -comp entries puts ispell
+in controlled compoundwords mode.  Nice to do for a quick spell-check.
+I recommend to delete the entries you you don't plan to use.  I like
+to use the -S switch, e.g. not sort the suggestions made by ispell.
+Then it is more likely that the correct suggestion will be early in
+the list.
+
+In the future I hope that ispell will be able to sort the suggestions
+it makes by commonness, at least for the most common words.  That
+should not be too difficult to implement.  Just load the most common
+words and their frequency indicator into memory, and do the nessesary
+lookups.  Or use the external look program.  Suggestions and
+implementations are most welcome!
+
+There is also a file flyspell.el around.  This also offers
+spell-checking on the fly, and the interface is more like m$-word.
+Flyspell-mode highlights incorrect words, and you can even click on
+them to get suggestions for correct spelling.  Being able to sort on
+commonness would make flyspell's auto-correction mode much more
+useful!
+
+
+USING ISPELL IN BATCH MODE
+
+I find ispell's batch mode very useful.  The command
+
+cat myfile.tex | ispell -l -d norsk | sort | uniq -c | sort -n -r -s
+
+prints all words in myfile.tex that is not in the Norwegian
+dictionary, where the most common words comes first.  Nice to spot
+errors, or as a starting point for a local dictionary.
+
+
+HYPHENATION IN TEX
+
+Two sets of hyphenation patterns for the Norwegian language are
+provided.  The file norskb.tex hyphenates almost as TeX used to, and
+the file nohyphbc.tex only splits compound words.
+
+It is fairly easy to install the nohyphb.tex file.  Just put it where
+TeX can find it, edit the file language.dat to point to the correct
+file, and remake the formats.  If you use teTeX you just say texconfig
+init.
+
+If you want to install both sets of patterns, you have a TeX capacity
+problem.  The variable ssup_tree_size needs to be bigger than 65535
+and trie_op_size bigger than 1501.  I use 262142 and 3501.  So you
+need to change tex.ch (and omega.ch) and recompile TeX.  If you are
+using teTeX that should be quite easy.  Here is a patch:
+
+*** tex.ch~     Fri Jan 21 23:13:24 2000
+--- tex.ch      Mon Jul 10 18:46:15 2000
+***************
+*** 196 ****
+! @d ssup_trie_size == 65535
+--- 196 ----
+! @d ssup_trie_size == 262143
+***************
+*** 215 ****
+! @!trie_op_size=1501; {space for ``opcodes'' in the hyphenation patterns;
+--- 215 ----
+! @!trie_op_size=3501; {space for ``opcodes'' in the hyphenation patterns;
+***************
+*** 217 ****
+! @!neg_trie_op_size=-1501; {for lower |trie_op_hash| array bound;
+--- 217 ----
+! @!neg_trie_op_size=-3501; {for lower |trie_op_hash| array bound;
+
+*** omega.ch~  Thu Jul 13 11:37:08 2000
+--- omega.ch   Sun Jul 23 20:38:03 2000
+***************
+*** 125,127 ****
+  @d ssup_trie_opcode == 65535
+! @d ssup_trie_size == 100000
+  
+--- 125,127 ----
+  @d ssup_trie_opcode == 65535
+! @d ssup_trie_size == 262143
+  
+***************
+*** 139,143 ****
+    {Use |hash_offset=0| for compilers which cannot decrement pointers.}
+! @!trie_op_size=1501; {space for ``opcodes'' in the hyphenation patterns;
+    best if relatively prime to 313, 361, and 1009.}
+! @!neg_trie_op_size=-1501; {for lower |trie_op_hash| array bound;
+    must be equal to |-trie_op_size|.}
+--- 139,143 ----
+    {Use |hash_offset=0| for compilers which cannot decrement pointers.}
+! @!trie_op_size=3501; {space for ``opcodes'' in the hyphenation patterns;
+    best if relatively prime to 313, 361, and 1009.}
+! @!neg_trie_op_size=-3501; {for lower |trie_op_hash| array bound;
+    must be equal to |-trie_op_size|.}
+
+
+The easiest way to use the norskbc patterns is to define the macros
+
+\def\goodhyphens{\lefthyphenmin2\righthyphenmin2\language=\l@norskc}
+\def\allhyphens{\lefthyphenmin1\righthyphenmin2\language=\l@norsk}
+
+and change whenever you want to. A better solution might be to define
+norskc as another language in the Babel system anf use the Babel
+language switching system.
+
+
+MAKING IT PERFECT
+
+So you have installed these great new patterns.  But TeX still might
+fail on Norwegian words not in the dictionary, so if you don't feel
+particularly lucky you will have to do something about that too.
+
+There are two strategies.  I tend to prefer the second one.
+
+1. Mark the compound point in the compound word with "-, e.g.
+   administrasjons"-sjef"-stillings-"søker.  If you have patched
+   ispell, you can do this during spell-checking most of the time.
+   
+2. Use the script inorsk-hyphenmaybe to print every word in your
+   document not in the dictionary (nynorsk and bokmål) hyphenated by
+   TeX.  Then you can easily browse through this list and put the
+   badly hyphenated words in a \hyphenation command.  The next time
+   you run the script it should produce correct hyphenation.
+   
+   For example if inorsk-hyphenmaybe outputs `kon-flik-t-akse' and
+   `kon-flik-t-ak-sen' you have to say \hyphenation{kon-flikt-akse
+   `kon-flikt-ak-sen'} in your TeX document.
+
+But we are not done with hyphenation yet.  Have you ever considered
+the problem of hyphenating the word `villede' in TeX.  Of course you
+have.  The hyphenation should be `vill-lede', thus an extra `l' should
+be added.
+
+Most languages which have such hyphenation (in particular German, with
+ss) support this in Babel.  The convention is that you code villede as
+vi"llede.  Of course the Norwegian dictionary supports this. Babel-3.7
+will also support this for Norwegian.  Till then you can use the file
+norsk.cfg to get this functionality (and some special hyphen points in
+addition).  The file itself offers more information.
+
+
+THE FUTURE OF HYPHENATION IN TEX
+
+In standard TeX today it is not possible to say that one hyphen point
+is better than another, e.g. I like barnehage-assistent better than
+barne-hageassistent.  In the future TeX will be able to handle
+multiple classes of hyphens and different penalties can be assigned to
+each class.  Mathias Clasen has implemented this as a change file,
+but it has not made it into the standard distributions yet.  The stuff
+at the end of the patterns/Makefile is about generating hyphenation
+patterns for such a TeX.
+
+
+LETS MAKE THE DICTIONARY EVEN BETTER!
+
+In the future I would like to add more word categories to the
+dictionary.  If you have a lot of text from within one field of
+knowledge, and would like to help, you can start by saying
+
+cat allmytextfiles | inorsk-hyphenmaybe -e -p norskbc > mywords
+
+You should install the hyphenation patterns norskbc for Norwegian to
+get hyphenation only at compound points, and of course the full
+dictionary with no words filtered out.
+
+You will probably spot some new words, some of your own spelling
+errors and some hyphenation errors.  Fix that file, add flags defined
+in the affix file etc.
+
+Next you have to learn to use the munchlist program.  Suppose you have
+the words in the file mywords
+
+gjennom-strømnings-mekanisme
+gjennom-strømnings-mekanismen
+gjennom-strømnings-mekanismens
+gjennom-strømnings-mekanismer
+gjennom-strømnings-mekanismene
+
+cat mywords \
+  | tr '-' 'Î' \
+  | munchlist -v -l norsk.aff.munch \
+  | tr 'Î' '-'
+
+the output should be
+
+gjennom-strømnings-mekanisme/AEG
+
+which represents these five words.  (Of course this only work if
+ispell and munchlist is correctly installed.)
+
+Here is some elisp stuff I have used (provided as is, probably very badly coded):
+
+(defun ispell-expand-affixes () (interactive)
+  (shell-command-on-region (mark) (point) "sed -e \"s/[-0-9 	:]//g\" | ispell -e -d norsk"))
+
+(defun ispell-collect-affixes () (interactive)
+  (shell-command (concat
+		  "echo \"" (buffer-substring-no-properties (mark) (point))
+		  "\" | sed -e \"s/-/î/g\" -e \"s/[0-9 	:]//g\" | "
+		  "munchlist -l norsk.aff.munch | sed -e \"s/î/-/g\" &")))
+
+(defun ispell-expand-line () (interactive)
+  (save-excursion
+  (beginning-of-line)
+  (let ((beg (point)))
+  (end-of-line)
+  (let ((end (point))))
+  (shell-command-on-region beg (point) "sed -e \"s/[-0-9 	:]//g\" | ispell -d norsk -e"))))
+
+; We have to quote the `' characters to protect them from shell
+; expansion.
+
+(defun current-line ()
+  (save-excursion
+    (beginning-of-line)
+    (let ((beg (point)))
+      (end-of-line)
+      (let ((end (point)))
+	(setq myvar (buffer-substring-no-properties beg end))
+	(while (string-match " .*" myvar)
+		 (setq myvar (replace-match "" nil nil myvar)))
+	(while (string-match "\\([^\\]\\)\\([`'\"]\\|\\\\$\\)" myvar)
+		 (setq myvar (replace-match "\\1\\\\\\2" nil nil myvar)))
+	(while (string-match "[0-9 \t:.*]" myvar)
+		 (setq myvar (replace-match "" nil nil myvar)))
+	myvar))))
+
+(defun current-region ()
+  (setq myvar (buffer-substring-no-properties (mark) (point)))
+  (while (string-match "\\([^\\]\\)\\([`'\"]\\|\\\\$\\)" myvar)
+    (setq myvar (replace-match "\\1\\\\\\2" nil nil myvar)))
+  (while (string-match "[0-9 \t]" myvar)
+    (setq myvar (replace-match "" nil nil myvar)))
+  myvar)
+
+

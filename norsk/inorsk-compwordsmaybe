@@ -1,0 +1,198 @@
+#! /bin/bash
+
+# compound.sh: Find possible compund words
+# Copyright:   Rune Kleveland 2000 (runekl@math.uio.no)
+# Licence:     GPL
+
+# This small script tries to find those pairs or triples of words in
+# a Norwegian text file that should be written in one word (without
+# hyphens!).  It reads from standard input and produces an hyphenated
+# list of compound words in input order.  The words are hyphenated
+# using TeX and the language norskc.  If your TeX installation doesn't
+# provide these hyphenation patterns, you can give the -notex option
+# until you feel brave enough to fix the real problem.
+
+# This can help people who has problems writing correct Norwegian to
+# avoid errors like `arkitekt tegnet', `matematikk lærer' etc.  But
+# the script will not find rare compounds, and it might very well
+# produce output even if there are no errors (å lese bøkene/de
+# lesebøkene, med følelse/medfølelse, for andre/forandre).  It is a
+# small tool, not the holy grail.
+
+
+# Make a files with all candidates.
+
+# compound [-p patterns] [-l language] [-e] [-h] [file]
+#
+#    -p patterns  Choose the patterns to hyphenate with.
+#                 The default is norskc, in which case TeX
+#                 executes \language=\l@norskc.
+#
+#    -l language  Choose the ispell dictionary.  The default is norsk.
+#
+#    -all         Print words not containing a hyphen
+#
+#    -s           Sort the words by frequency
+#    -notex       Don't use TeX
+
+TMP=/tmp
+CH=a-zæøåéèêôóòçA-ZÆØÅÉÈÊÔÓÒÇ
+LATEX=latex
+LANGUAGE=norsk
+PATTERNS=norskc
+ONLYHYPHEN=true
+SORTFREQ=false
+NOTEX=false
+
+while [ $# != 0 ]
+do
+    case "$1" in
+	-p)
+	    PATTERNS=$2
+	    shift
+	    ;;
+	-l)
+	    LANGUAGE=$2
+	    shift
+	    ;;
+	-all)
+	    ONLYHYPHEN=false
+	    ;;
+	-s)
+	    SORTFREQ=true
+	    ;;
+	-notex)
+	    NOTEX=true
+	    ;;
+	-)
+	    break
+	    ;;
+	-*)
+	    echo 'Usage: compound [-p patterns] [-l language] [-all] [-s] [file]'
+	      1>&2
+	    exit 2
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+    shift
+done
+
+# Hyphenation commands result in a lot of unnessesary output.  Try to
+# remove those first.  Also remove "- commands.
+
+sed -e 's/%.*//' \
+    -e '/\\hyphenation[ 	]*{.*}/ D' \
+    -e '/\\hyphenation[ 	]*{[^}]*$/,/}/ D' \
+    -e 's/\"-//g' $@ \
+ | tr -cs ${CH} '\n' > ${TMP}/comp1.tmp
+
+# We make to many files in the process.  Do it in $TMP.
+
+cd ${TMP}
+
+# Can someone come up with a smart sed script to make comp4 directly?
+
+cat comp1.tmp   | sed -e '1 D' -e '$ a \
+XXX' > comp2.tmp
+
+cat comp2.tmp   |  sed -e '1 D' -e '$ a \
+XXX' > comp3.tmp
+
+paste -d '-\
+--'  comp1.tmp comp2.tmp comp1.tmp comp2.tmp comp3.tmp \
+  | grep -v -e '\(^.-\|-..\?$\|XXX\)' \
+  | tr -d '-' \
+  > comp4.tmp
+
+#Spellcheck the file, and find the words not in the dictionary.
+
+cat comp4.tmp | ispell -B -l -d ${LANGUAGE} > comp5.tmp
+
+diff comp4.tmp comp5.tmp | grep '<' | \
+if [ "${NOTEX}" = true ]
+then
+  sed -e 's/^..//'
+else
+  sed -e 's/^..//' \
+      -e '1 i \
+\\writelog{' \
+      -e '1000~1000 a \
+}\
+\\writelog{' \
+      -e '$ a \
+}' \
+  > comp6.tmp
+
+rm -f comp[12345].tmp
+
+# Hyphenate the result using TeX, to filter out words like sommer (som
+# mer) etc, e.g. the words that are not compounds.
+
+TEXFILE='\nonstopmode
+\documentclass{minimal}
+\usepackage{t1enc}
+\makeatletter
+\language=\l@'${PATTERNS}'\lefthyphenmin=2\righthyphenmin=2
+\ifx\gendiscretionary\@undefined\else
+\hyphenclassesstate=1\hyphenclasses=5\exhyphenclass=4
+\fi
+\makeatother
+\def\writelog#1{\setbox0=\vbox{\parfillskip0pt \hsize16383.99999pt
+\pretolerance=-1 \tolerance=-1 \hbadness=0 \showboxdepth=0 \ #1}}
+\begin{document}
+\input{comp6.tmp}
+\typeout{----------}\end{document}'
+
+
+${LATEX} ${TEXFILE} 2&>/dev/null
+
+sed -e '1,/^(comp6.tmp/ D' \
+    -e '/\\hbox/ D' \
+    -e '/^ *$/ D' \
+    -e 's/^\(\[\]\)\? *\\T1[^ ]* /*/' \
+    -e '/^----------/,$ c \
+ '  minimal.log \
+  | tr -d '\n)[]' \
+  | tr -s ' ' '\n' \
+  | sed -e 's/-\*//' \
+        -e '1 s/\*//' \
+	-e 's/\*/\
+/'      -e 's/\^\^c5/Å/g' \
+	-e 's/\^\^c6/Æ/g' \
+	-e 's/\^\^d8/Ø/g' \
+	-e 's/\^\^c7/Ç/g' \
+	-e 's/\^\^c8/È/g' \
+	-e 's/\^\^c9/É/g' \
+	-e 's/\^\^d2/Ò/g' \
+	-e 's/\^\^d3/Ó/g' \
+	-e 's/\^\^d4/Ô/g' \
+	-e 's/\^\^e5/å/g' \
+	-e 's/\^\^e6/æ/g' \
+	-e 's/\^\^f8/ø/g' \
+	-e 's/\^\^e7/ç/g' \
+	-e 's/\^\^e8/è/g' \
+	-e 's/\^\^e9/é/g' \
+	-e 's/\^\^f2/ò/g' \
+	-e 's/\^\^f3/ó/g' \
+	-e 's/\^\^f4/ô/g' \
+        -e 's/^\([^-0-9]\+\)\([0-9]\+\)/\1\
+\2/' | \
+if [ "${ONLYHYPHEN}" = true ]
+then
+  grep -e -
+else
+  cat
+fi
+fi | \
+if [ "${SORTFREQ}" = true ]
+then
+  sort | uniq -c | sort -n -r -s
+else
+  cat
+fi
+
+# clean
+
+rm -f minimal.log minimal.aux minimal.dvi comp6.tmp

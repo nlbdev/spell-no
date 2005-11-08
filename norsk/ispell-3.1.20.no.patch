@@ -1,0 +1,760 @@
+This is a patch for the ispell program, version 3.1.20.
+
+If you have applied this patch and find a bug, please make sure that
+the bug is not related to this patch before reporting it to the ispell
+maintainers <ispell-el-bugs@itcorp.com>.
+
+If the bug is related to this patch, runekl@math.uio.no would like to
+know.
+
+  The following things are done:
+  
+  1. An attempt is made to fix the backslash bug.  The patch for this
+     was found at Ken Stevens ispell.el site.
+  
+  2. Ispell can now parse html files thanks to a patch by Gerry
+     Tierney.  Basically this means that a patched copy of ispell will
+     ignore any mark-up tags or html entities in a html document when
+     spell checking that document.  Any text inside an 'alt' attribute
+     will however be checked.
+  
+     Examples: ispell index.html     # html tags will be ignored
+               ispell -h README      # html tags will be ignored
+               ispell -n index.html  # html tags will be spell-checked
+
+     I have not been able to make the html mode work well when using
+     ispell from emacs.  That doesn't matter too much, since ispell.el
+     has its own skipping mechanism.
+  
+  3. Buildhash now accepts all characters between A and z as flags,
+     not only the alphanumeric ones when MASKBITS=64.  This is needed
+     by the Norwegian affix file.
+  
+  4. The AMS and breqn math environments are now skipped by ispell.
+  
+  5. Ispell gets the ability to suggest "- as a separation character
+     in addition to - and space.  This only happens if such support is
+     compiled in, e.g. the COMPOUNDBABEL flag must be defined, and it
+     only happens in TeX mode and if the language is norsk.  It is
+     useful to mark compound points in words to ensure good
+     hyphenation when using LaTeX with Babel.  The Norwegian
+     hyphenation patterns distributed in this package hyphenate almost
+     every word in the Ispell dictionary correctly, but no guaranty is
+     offered for other compound words.
+
+  6. Added an -r switch, which is almost like the -a switch, but the
+     suggestions are printed even if the word is found in the
+     dictionary.  This is useful for hyphenating words and for
+     eliminating rare words close to very common words.  There has to
+     be some german out there wanting to make TeX hyphenate only
+     compound words in German.
+
+  7. Added a patch from the Redhat rpm to avoid compilation error in
+     ijoin.c.
+
+
+diff -2Nc ispell-3.1/correct.c ispell-3.1/correct.c
+*** ispell-3.1/correct.c	Thu Oct 12 20:04:06 1995
+--- ispell-3.1/correct.c	Tue Sep  5 22:02:44 2000
+***************
+*** 51,54 ****
+--- 51,61 ----
+  /*
+   * $Log$
++  *
++  * 1999/12/07
++  * Patch from Ken Stevens ispell.el site to fix the backslash bug.
++  *
++  * Line added by Gerry Tierney to reset inside html flag for each new
++  * file in case a tag was left open by a previous file.  10/14/95
++  *
+   * Revision 1.59  1995/08/05  23:19:43  geoff
+   * Fix a bug that caused offsets for long lines to be confused if the
+***************
+*** 234,237 ****
+--- 241,247 ----
+      int		ch;
+  
++ 	/* line added by Gerry Tierney */
++ 	insidehtml = 0;
++ 
+      for (bufno = 0;  bufno < contextsize;  bufno++)
+  	contextbufs[bufno][0] = '\0';
+***************
+*** 949,952 ****
+--- 959,965 ----
+      int			firstno;	/* Index into first */
+      ichar_t *		firstp;		/* Ptr into current firsthalf word */
++ #ifdef COMPOUNDBABEL
++     ichar_t *		firstpa;	/* Ptr into current firsthalf word */
++ #endif /*COMPOUNDBABEL*/
+      ichar_t		newword[INPUTWORDLEN + MAXAFFIXLEN + 1];
+      int			nfirsthalf;	/* No. words saved in 1st half */
+***************
+*** 986,989 ****
+--- 999,1005 ----
+  		    {
+  		    firstp = &firsthalf[firstno][p - newword];
++ #ifdef COMPOUNDBABEL
++ 		    firstpa = &firsthalf[firstno][p - newword + 1];
++ #endif /* COMPOUNDBABEL */
+  		    for (secondno = 0;  secondno < nsecondhalf;  secondno++)
+  			{
+***************
+*** 995,998 ****
+--- 1011,1032 ----
+  			if (insert (firsthalf[firstno]) < 0)
+  			    return;
++ #ifdef COMPOUNDBABEL
++ 			/* Change to make ispell suggest "- for as a
++                            compound word mark for unknown compound
++                            words, but only in TeX mode.  This is
++                            useful since the TeX patterns might not
++                            hyphenate words not in the dictionary
++                            correctly.  */
++ 			if ((tflag) &&
++ 			    (strstr(hashname, "/norsk.hash") !=0))
++ 			    { 
++ 			      *firstp = '"';
++ 			      *firstpa = '-';
++ 			      (void) icharcpy (firstp + 2,
++ 					       secondhalf[secondno]);
++ 			      if (insert (firsthalf[firstno]) < 0)
++ 				return;
++ 			    }
++ #endif /* COMPOUNDBABEL */
+  			}
+  		    }
+***************
+*** 1489,1499 ****
+  	 */
+  	bufsize = strlen (contextbufs[0]);
+! 	if (contextbufs[0][bufsize - 1] == '\n')
+! 	    {
+! 	    hadnl = 1;
+! 	    contextbufs[0][--bufsize] = '\0';
+! 	    }
+! 	else
+! 	    hadnl = 0;
+  	if (bufsize == (sizeof contextbufs[0]) / 2 - 1)
+  	    {
+--- 1523,1527 ----
+  	 */
+  	bufsize = strlen (contextbufs[0]);
+! 	hadnl = (contextbufs[0][bufsize - 1] == '\n');
+  	if (bufsize == (sizeof contextbufs[0]) / 2 - 1)
+  	    {
+***************
+*** 1557,1563 ****
+--- 1585,1595 ----
+  	    else if (contextbufs[0][0] == '~')
+  		{
++ 		if (hadnl)
++ 		    contextbufs[0][bufsize - 1] = '\0';
+  		defdupchar = findfiletype (&contextbufs[0][1], 1, (int *) NULL);
+  		if (defdupchar < 0)
+  		    defdupchar = 0;
++ 		if (hadnl)
++ 		    contextbufs[0][bufsize - 1] = '\n';
+  		}
+  	    else
+diff -2Nc ispell-3.1/defmt.c ispell-3.1/defmt.c
+*** ispell-3.1/defmt.c	Thu Oct 12 20:04:06 1995
+--- ispell-3.1/defmt.c	Tue Sep  5 22:02:44 2000
+***************
+*** 55,58 ****
+--- 55,68 ----
+  /*
+   * $Log$
++  *
++  * 2000/02/02 Rune Kleveland <runekl@math.uio.no>
++  * The AMS and breqn math environments added to the skip list.
++  *
++  * 1999/12/07
++  * Patch from Ken Stevens ispell.el page to fix the backslash bug.
++  *
++  * html-mode code added by Gerry Tierney <gtierney@nova.ucd.ie>
++  * 14th of Oct '95
++  *
+   * Revision 1.41  1995/08/05  23:19:47  geoff
+   * Get rid of an obsolete comment.  Add recognition of documentclass and
+***************
+*** 161,164 ****
+--- 171,175 ----
+  static char save_LaTeX_Mode;
+  
++ /* parameters changed by Gerry Tierney to include the output file */
+  static char * skiptoword (bufp)		/* Skip to beginning of a word */
+      char *	bufp;
+***************
+*** 171,174 ****
+--- 182,232 ----
+        )
+  	{
++ 	/* Start of modifications by Gerry Tierney */
++ 		/* We first check for an end-quote character if we are checking
++ 		   inside of an alt attribute.  If we find one we ignore the 
++ 		   rest of the tag */
++ 		if (insidehtml == -1 && *bufp == '\"')
++ 		{
++ 			insidehtml = 1;
++ 			while (*bufp != '>' && *bufp != '\0')
++ 				bufp++;
++ 				if (*bufp == '\0')
++ 					insidehtml = 1;
++ 		}
++ 
++ 		/* If we are checking a html file we want to ignore any
++ 		   HTML tags.  These should start with a '<' 
++ 		   and end with a '>' so we simply skip over anything
++ 		   between these two symbols.  If we reach the end of the line
++ 		   before finding a matching '>' we set a flag 'insidehtml' */
++ 		if (htmlflag == 1 && *bufp == '<')
++ 		{
++ 			/* Found start of html tag - Skip to end of tag or EOL */
++ 			while (*bufp != '>' && *bufp != '\0' &&
++ 				   strncasecmp(bufp,"alt=\"",5) != 0)
++ 				bufp++;
++ 			/* If we find an alt tag, we want to check its text */
++ 			if (strncasecmp(bufp,"alt=\"",5) == 0)
++ 				{ 
++ 					insidehtml=-1; 
++ 					bufp = bufp + 4; 
++ 				}
++ 			else if (*bufp == '\0')
++ 				/* we've reached EOL without closing the tag */
++ 				insidehtml = 1;
++ 		}
++ 
++ 		/* Skip over quoted entities such as &quot;
++ 		   These all start with an ampersand and
++ 		   end with a semi-colon.  We do not need
++ 		   to worry about them extending over more than one line */
++ 		if (htmlflag == 1 && *bufp == '&')
++ 		{
++ 			while (*bufp != ';' && *bufp != '\0')
++ 				bufp++;
++ 		}
++ 	/* End of modifications by Gerry Tierney */
++ 
++ 			
+  	/* check paren necessity... */
+  	if (tflag) /* TeX or LaTeX stuff */
+***************
+*** 390,394 ****
+  	contextbufs[0][len] = 0;
+  
+!     if (!tflag)
+  	{
+  	/* skip over .if */
+--- 448,453 ----
+  	contextbufs[0][len] = 0;
+  
+! 	/* Conditions modified by Gerry Tierney to handle html-mode */
+!     if (!tflag && htmlflag != 1)
+  	{
+  	/* skip over .if */
+***************
+*** 427,431 ****
+  
+      /* if this is a formatter command, skip over it */
+!     if (!tflag && *currentchar == NRDOT)
+  	{
+  	while (*currentchar  &&  !myspace (chartoichar (*currentchar)))
+--- 486,491 ----
+  
+      /* if this is a formatter command, skip over it */
+! 	/* Conditions modified by Gerry Tierney to handle html-mode */
+!     if (!tflag && htmlflag != 1 && *currentchar == NRDOT)
+  	{
+  	while (*currentchar  &&  !myspace (chartoichar (*currentchar)))
+***************
+*** 442,446 ****
+--- 502,540 ----
+  	    }
+  	}
++ 	
++ /* Start of modifications by Gerry Tierney */
++ 
++ 	/* If we are checking a htmlfile and we have being left with
++ 	   an open tag from a previous line, then we ignore everything
++ 	   from the start of the line until we either reach the end of
++ 	   the line or we close the tag */
++ 
++ 	if (htmlflag == 1 && insidehtml == 1) 
++ 	{
++ 		while (*currentchar != '>' && *currentchar != '\0')
++ 			{
++ 				/* We check for an alt attribute (found inside img 
++ 				   tags).  We want to spell check it's text so if
++ 				   we find one, we switch out html-mode until we
++ 				   find the next quote character.  We signal this
++ 				   state by setting the insidehtml flag to -1 */
++ 				if (strncasecmp(currentchar,"alt=\"",5) == 0)
++ 				{
++ 					copyout(&currentchar,5);
++ 					insidehtml = -1;
++ 					break;
++ 				}
++ 
++ 				(void) putc (*currentchar, ofile);
++ 				currentchar++;
++ 			}
++ 		if (*currentchar == '>')
++ 		/* We've closed the tag so we reset the flag */
++ 			insidehtml = 0;
++ 
++ 	}
+  
++ /* End of modifications by Gerry Tierney */
++ 	
+      for (  ;  ;  )
+  	{
+***************
+*** 479,483 ****
+  		    continue;
+  		    }
+! 		if (good (itoken, 0, 0, 0, 0))
+  		    {
+  		    if (hits[0].prefix == NULL
+--- 573,579 ----
+  		    continue;
+  		    }
+! 		/* The rflag is added by runekl@math.uio.no to make
+!                    ispell print near matches even for legal words */
+! 		if (!rflag && good (itoken, 0, 0, 0, 0))
+  		    {
+  		    if (hits[0].prefix == NULL
+***************
+*** 495,499 ****
+  			}
+  		    }
+! 		else if (compoundgood (itoken, 0))
+  		    {
+  		    /* compound-word match */
+--- 591,595 ----
+  			}
+  		    }
+! 		else if (!rflag && compoundgood (itoken, 0))
+  		    {
+  		    /* compound-word match */
+***************
+*** 549,553 ****
+  	}
+  
+!     if (!lflag  &&  (aflag  ||  hadlf))
+         (void) putc ('\n', ofile);
+     }
+--- 645,649 ----
+  	}
+  
+!     if (!lflag  && (aflag  ||  hadlf))
+         (void) putc ('\n', ofile);
+     }
+***************
+*** 589,592 ****
+--- 685,690 ----
+      }
+  
++ /* Updates bufp to point to the next character to skip. */
++ /*  Should only be called on non-word characters. */
+  static int TeX_math_begin (bufp)
+      char **	bufp;
+***************
+*** 605,612 ****
+  	    return 1;
+  	else if (!isalpha(**bufp)  &&  **bufp != '@')
+! 	    {
+! 	    (*bufp)++;
+! 	    continue;
+! 	    }
+  	else if (TeX_strncmp (*bufp, "begin", 5) == 0)
+  	    {
+--- 703,707 ----
+  	    return 1;
+  	else if (!isalpha(**bufp)  &&  **bufp != '@')
+! 	    return 0;
+  	else if (TeX_strncmp (*bufp, "begin", 5) == 0)
+  	    {
+***************
+*** 638,647 ****
+  	    if (*(*bufp)++ == TEXDOT
+  	      &&  (**bufp == TEXRIGHTSQUARE  ||  **bufp == TEXRIGHTANGLE))
+! 		return TeX_math_begin (bufp);
+  	    }
+- 	return 0;
+  	}
+!     else
+! 	return 0;
+      }
+  
+--- 733,740 ----
+  	    if (*(*bufp)++ == TEXDOT
+  	      &&  (**bufp == TEXRIGHTSQUARE  ||  **bufp == TEXRIGHTANGLE))
+! 		break;
+  	    }
+  	}
+!     return 0;
+      }
+  
+***************
+*** 764,767 ****
+--- 857,871 ----
+        ||  strncmp (*bufp, "displaymath", 11) == 0
+        ||  strncmp (*bufp, "picture", 7) == 0
++ 	/* The AMS environments added by runekl@math.uio.no */
++       ||  strncmp (*bufp, "align", 5) == 0
++       ||  strncmp (*bufp, "flalign", 7) == 0
++       ||  strncmp (*bufp, "gather", 6) == 0
++       ||  strncmp (*bufp, "multline", 8) == 0
++       ||  strncmp (*bufp, "alignat", 7) == 0
++ 	/* The upcoming breqn environments added by runekl@math.uio.no */
++       ||  strncmp (*bufp, "dmath", 5) == 0
++       ||  strncmp (*bufp, "dseries", 7) == 0
++       ||  strncmp (*bufp, "dgroup", 6) == 0
++       ||  strncmp (*bufp, "darray", 6) == 0
+  #ifdef IGNOREBIB
+        ||  strncmp (*bufp, "thebibliography", 15) == 0
+diff -2Nc ispell-3.1/ijoin.c ispell-3.1/ijoin.c
+*** ispell-3.1/ijoin.c	Wed Nov  2 19:44:21 1994
+--- ispell-3.1/ijoin.c	Tue Sep  5 22:02:44 2000
+***************
+*** 90,93 ****
+--- 90,94 ----
+  
+  #include <stdio.h>
++ #include <string.h>
+  #include "config.h"
+  #include "ispell.h"
+***************
+*** 134,138 ****
+  static int		unpairable2 = 0; /* NZ if -a2 */
+  
+- extern int	strcmp ();
+  
+  int main (argc, argv)			/* Join files */
+--- 135,138 ----
+diff -2Nc ispell-3.1/ispell.1X ispell-3.1/ispell.1X
+*** ispell-3.1/ispell.1X	Mon Jan 23 19:28:25 1995
+--- ispell-3.1/ispell.1X	Tue Sep  5 22:02:44 2000
+***************
+*** 39,42 ****
+--- 39,45 ----
+  .\"
+  .\" $Log$
++ .\"
++ .\" Documentation for html-mode added by Gerry Tierney 10/14/1995
++ .\"
+  .\" Revision 1.80  1995/01/08  23:23:31  geoff
+  .\" Document the new personal-dictionary behavior (dictionary named after
+***************
+*** 111,114 ****
+--- 114,118 ----
+  .RB [ \-t ]
+  .RB [ \-n ]
++ .RB [ \-h ]
+  .RB [ \-b ]
+  .RB [ \-x ]
+***************
+*** 297,300 ****
+--- 301,306 ----
+  .IP \fB\-n\fR
+  The input file is in nroff/troff format.
++ .IP \fB\-h\fR
++ The input file is in html format.
+  .IP \fB\-b\fR
+  Create a backup file by appending ".bak"
+***************
+*** 338,343 ****
+  or TeX/LaTeX
+  .RB ( \-t )
+! input mode.
+! (The default is controlled by the DEFTEXFLAG installation option.)
+  TeX/LaTeX mode is also automatically selected if an input file has
+  the extension ".tex", unless overridden by the
+--- 344,353 ----
+  or TeX/LaTeX
+  .RB ( \-t )
+! input mode (This does not work for html
+! .RB ( \-h )
+! mode.  However html-mode is assumed for any files with a ".html"
+! or ".htm" extension unless nroff/troff or TeX/LaTeX modes have
+! being explicted defined).
+! (The default mode is controlled by the DEFTEXFLAG installation option.)
+  TeX/LaTeX mode is also automatically selected if an input file has
+  the extension ".tex", unless overridden by the
+diff -2Nc ispell-3.1/ispell.c ispell-3.1.20/ispell.c
+*** ispell-3.1/ispell.c	Thu Oct 12 20:04:07 1995
+--- ispell-3.1/ispell.c	Tue Sep  5 22:02:44 2000
+***************
+*** 50,53 ****
+--- 50,59 ----
+  /*
+   * $Log$
++  *
++  * Modifications made by Gerry Tierney <gtierney@nova.ucd.ie> to
++  * allow checking of html code.  Adds -h switch and checking for
++  * html files by .html or .htm extension. 
++  * 14th of October 1995
++  *
+   * Revision 1.133  1995/10/11  04:30:29  geoff
+   * Get rid of an unused variable.
+***************
+*** 299,303 ****
+  	 *	^^^^       ^^^ ^  ^^ ^^
+  	 *	abcdefghijklmnopqrstuvwxyz
+! 	 *	^^^^^^     ^^^ ^  ^^ ^^^
+  	 */
+  	arglen = strlen (*argv);
+--- 305,311 ----
+  	 *	^^^^       ^^^ ^  ^^ ^^
+  	 *	abcdefghijklmnopqrstuvwxyz
+! 	 *	^^^^^^ ^    ^^^ ^^^^^ ^^^
+! 	 *
+! 	 * -h flag used by Gerry Tierney for html-mode
+  	 */
+  	arglen = strlen (*argv);
+***************
+*** 489,492 ****
+--- 497,501 ----
+  		    usage ();
+  		tflag = 0;		/* nroff/troff mode */
++ 		htmlflag = -1;		/* non-html mode */
+  		deftflag = 0;
+  		if (preftype == NULL)
+***************
+*** 497,504 ****
+--- 506,524 ----
+  		    usage ();
+  		tflag = 1;
++ 		htmlflag = -1;		/* non-html mode */
+  		deftflag = 1;
+  		if (preftype == NULL)
+  		    preftype = "tex";
+  		break;
++ 
++ 		/* -h option to enable HTML-mode added by Gerry Tierney */
++ 	    case 'h':
++ 		if (arglen > 2)
++ 			usage ();
++ 		tflag = 0;		/* non-TeX mode */
++ 		deftflag = 0;
++ 		htmlflag = 1;		/* Html-Mode */
++ 		break;
++ 
+  	    case 'T':			/* Set preferred file type */
+  		p = (*argv)+2;
+***************
+*** 523,526 ****
+--- 543,554 ----
+  		aflag++;
+  		break;
++ 	    case 'r':
++ 	      /* The rflag is added by runekl@math.uio.no to make
++ 		 ispell print near matches even for legal words */
++ 		if (arglen > 2)
++ 		    usage ();
++ 		aflag++;
++ 		rflag++;
++ 		break;
+  	    case 'D':
+  		if (arglen > 2)
+***************
+*** 811,815 ****
+  	tflag =
+  	  (cp = rindex (filename, '.')) != NULL  &&  strcmp (cp, ".tex") == 0;
+! 
+      if (prefstringchar < 0)
+  	{
+--- 839,843 ----
+  	tflag =
+  	  (cp = rindex (filename, '.')) != NULL  &&  strcmp (cp, ".tex") == 0;
+! 	
+      if (prefstringchar < 0)
+  	{
+***************
+*** 819,822 ****
+--- 847,858 ----
+  	    defdupchar = 0;
+  	}
++ 
++ 	/* Modification by Gerry Tierney to set hmtl-mode 
++ 	 * based on file extension */
++ 	if (htmlflag == 0)
++ 	htmlflag =
++ 	  (cp = rindex (filename, '.')) != NULL  &&  
++ 	  ( strcmp (cp, ".html") == 0 ||
++ 	    strcmp (cp, ".htm") );
+  
+      if ((infile = fopen (filename, "r")) == NULL)
+diff -2Nc ispell-3.1/ispell.h ispell-3.1.20/ispell.h
+*** ispell-3.1/ispell.h	Thu Oct 12 20:04:08 1995
+--- ispell-3.1/ispell.h	Tue Sep  5 22:02:44 2000
+***************
+*** 43,46 ****
+--- 43,51 ----
+  /*
+   * $Log$
++  *
++  * Patch by Gerry Tierney <gtierney@nova.ucd.ie>
++  * 1995/10/14
++  * Added variables htmlflag and insidehtml for use in html-mode
++  *
+   * Revision 1.68  1995/03/06  02:42:41  geoff
+   * Be vastly more paranoid about parenthesizing macro arguments.  This
+***************
+*** 548,551 ****
+--- 553,557 ----
+  
+  EXTERN int	aflag;		/* NZ if -a or -A option specified */
++ EXTERN int	rflag;		/* NZ if -s is specified */
+  EXTERN int	cflag;		/* NZ if -c (crunch) option */
+  EXTERN int	lflag;		/* NZ if -l (list) option */
+***************
+*** 624,627 ****
+--- 630,645 ----
+  INIT (int tflag, DEFTEXFLAG);		/* NZ for TeX mode in current file */
+  INIT (int prefstringchar, -1);		/* Preferred string character type */
++ 
++ /* The following two definitions added by 
++  * Gerry Tierney <gtierney@nova.ucd.ie>
++  * 14th Oct 95
++  */
++ INIT (int htmlflag, 0);			/* HTML-checking state. 
++ 								 *	1=enable html-mode,
++ 								 *	0=enable html-mode based on filename,
++ 								 *  -1=disable html-mode */
++ INIT (int insidehtml, 0);		/* Flag to indicate that the current html 
++ 								 *	tag has spanned more than one line */	
++ /* End of Gerry's Interference */
+  
+  INIT (int terse, 0);			/* NZ for "terse" mode */
+diff -2Nc ispell-3.1/ispell.texinfo ispell-3.1.20/ispell.texinfo
+*** ispell-3.1/ispell.texinfo	Wed Nov  2 19:44:23 1994
+--- ispell-3.1/ispell.texinfo	Tue Sep  5 23:15:19 2000
+***************
+*** 74,77 ****
+--- 74,80 ----
+  
+  @end titlepage
++ 
++ @node Top, Emacs, (dir), (dir)
++ 
+  @menu
+  * Emacs::			Using ispell from emacs
+***************
+*** 92,96 ****
+  @end menu
+  
+- @node Top, Emacs, (dir), (dir)
+  
+  @iftex
+--- 95,98 ----
+***************
+*** 199,203 ****
+  @end table
+  
+! Of course, you can also type @kbd{@ctrl{G}} to stop the command without
+  changing anything.
+  
+--- 201,205 ----
+  @end table
+  
+! Of course, you can also type @kbd{C-G} to stop the command without
+  changing anything.
+  
+***************
+*** 216,220 ****
+  When you finish with one word, the cursor is automatically moved to the
+  next.  If you want to stop in the middle of the list type @kbd{X} or
+! @kbd{@ctrl{G}}.
+  
+  @node Region, Multiple Dictionaries, Buffer, Emacs
+--- 218,222 ----
+  When you finish with one word, the cursor is automatically moved to the
+  next.  If you want to stop in the middle of the list type @kbd{X} or
+! @kbd{C-G}.
+  
+  @node Region, Multiple Dictionaries, Buffer, Emacs
+diff -2Nc ispell-3.1/local.h.samp ispell-3.1.20/local.h.samp
+*** ispell-3.1/local.h.samp	Mon Jan 23 19:28:27 1995
+--- ispell-3.1/local.h.samp	Tue Sep  5 22:02:44 2000
+***************
+*** 86,89 ****
+--- 86,91 ----
+  /*
+   * Important directory paths
++  * Warning.  The ispell.el distributed with ispell-3.1.20 is obsolete.
++  * To avoid installing it, make ELISPDIR an invalid directory.
+   */
+  #define BINDIR	"/usr/local/bin"
+***************
+*** 94,97 ****
+--- 96,101 ----
+  #define MAN4DIR	"/usr/local/man/man4"
+  
++ #define COMPOUNDBABEL	/* Suggest "- in addition to - as compound word */
++ 			/* separator in TeX mode for dictionary norsk.hash */
+  /*
+   * Place any locally-required #include statements here
+diff -2Nc ispell-3.1/parse.y ispell-3.1.20/parse.y
+*** ispell-3.1/parse.y	Mon Nov 21 19:26:05 1994
+--- ispell-3.1/parse.y	Tue Sep  5 22:02:44 2000
+***************
+*** 497,502 ****
+  			     */
+  			    if (strcmp ((char *) $2, "nroff") != 0
+! 			      &&  strcmp ((char *) $2, "tex") != 0)
+! 				yyerror (PARSE_Y_BAD_DEFORMATTER);
+  			    ctypenum++;
+  			    hashheader.nstrchartype = ctypenum;
+--- 497,503 ----
+  			     */
+  			    if (strcmp ((char *) $2, "nroff") != 0
+! 				&&  strcmp ((char *) $2, "tex") != 0
+! 				&&  strcmp ((char *) $2, "sgml") != 0)
+! 			      yyerror (PARSE_Y_BAD_DEFORMATTER);
+  			    ctypenum++;
+  			    hashheader.nstrchartype = ctypenum;
+***************
+*** 871,875 ****
+  #endif /* MASKBITS */
+  #if MASKBITS <= 64
+! 			    if (!isalpha (flagbit))
+  				yyerror (PARSE_Y_BAD_FLAG);
+  #endif /* MASKBITS */
+--- 872,876 ----
+  #endif /* MASKBITS */
+  #if MASKBITS <= 64
+! 			    if (flagbit < 'A' || flagbit > 'z')
+  				yyerror (PARSE_Y_BAD_FLAG);
+  #endif /* MASKBITS */
+***************
+*** 903,907 ****
+  #endif /* MASKBITS */
+  #if MASKBITS <= 64
+! 			    if (!isalpha (flagbit))
+  				yyerror (PARSE_Y_BAD_FLAG);
+  #endif /* MASKBITS */
+--- 904,908 ----
+  #endif /* MASKBITS */
+  #if MASKBITS <= 64
+! 			    if (flagbit < 'A' || flagbit > 'z')
+  				yyerror (PARSE_Y_BAD_FLAG);
+  #endif /* MASKBITS */
+diff -2Nc ispell-3.1/version.h ispell-3.1.20/version.h
+*** ispell-3.1/version.h	Thu Oct 12 20:04:46 1995
+--- ispell-3.1/version.h	Tue Sep  5 22:02:45 2000
+***************
+*** 9,13 ****
+  
+  static char * Version_ID[] = {
+!     "@(#) International Ispell Version 3.1.20 10/10/95",
+      "@(#) Copyright (c), 1983, by Pace Willisson",
+      "@(#) International version Copyright (c) 1987, 1988, 1990-1995,",
+--- 9,13 ----
+  
+  static char * Version_ID[] = {
+!     "@(#) International Ispell Version 3.1.20 10/10/95, + html, patch 1, AMS",
+      "@(#) Copyright (c), 1983, by Pace Willisson",
+      "@(#) International version Copyright (c) 1987, 1988, 1990-1995,",

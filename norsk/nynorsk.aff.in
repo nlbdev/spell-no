@@ -1,0 +1,768 @@
+#notes: meister, middel, minister, offer, våpen, dotter, nummer, sko/skor/skorne syster/systera, treet... varsel ver/vér åker eksempel følsame gjere gjorde gjort offer potet
+# Publikummet følger ingen regler, ser det ut til.
+
+# Affikstabell for norsk
+# Skrevet av Ivar Aavatsmark, oktober 1993.
+# Sterkt utvidet av Rune Kleveland mai 1998. (kanskje for sterkt)
+# I filen local.h er satt:
+#
+#   #define MASKBITS        64
+#
+
+compoundwords controlled z  #Skal ALDRI brukes med compoundwords on.
+compoundmin 3
+allaffixes on
+flagmarker /
+
+defstringtype "list" "nroff" ".list"
+
+boundarychars [".,;:]  #Dette brukes av Babel for LaTeX for å støtte koding
+                       #av for eksempel vi"llede for rett deling vill-lede.
+                       #`.' gjør at man finner steder der man har glemt
+                       #mellomrom etter . og ,.
+stringchar î Î
+wordchars [a-c] [A-C]
+stringchar ç Ç
+wordchars [d-e] [D-E]
+stringchar é É
+stringchar ê Ê
+stringchar è È
+wordchars [f-o] [F-O]
+stringchar ó Ó
+stringchar ô Ô
+stringchar ò Ò
+wordchars [p-z] [P-Z]
+stringchar æ Æ
+stringchar ø Ø
+stringchar å Å
+
+altstringtype "tex" "TeX"  ".tex" ".bib"
+
+altstringchar  ç ç 
+altstringchar  Ç Ç
+altstringchar  é é
+altstringchar  É É
+altstringchar  ê ê
+altstringchar  Ê Ê
+altstringchar  è è
+altstringchar  È È
+altstringchar  ó ó
+altstringchar  Ó Ó
+altstringchar  ô ô
+altstringchar  Ô Ô
+altstringchar  ò ò
+altstringchar  Ò Ò
+altstringchar  æ æ
+altstringchar  Æ Æ
+altstringchar  ø ø
+altstringchar  Ø Ø
+altstringchar  å å
+altstringchar  Å Å
+
+# 
+# Html
+#
+# Dette virker kun fra og med ispell-3.2.
+
+altstringtype "html" "sgml" ".html" ".htm"
+
+altstringchar   \&ccedil\; ç
+altstringchar   \&Ccedil\; Ç
+altstringchar   \&eacute\; é
+altstringchar   \&Eacute\; É
+altstringchar   \&ecirc\;  ê
+altstringchar   \&Ecirc\;  Ê
+altstringchar   \&egrave\; è
+altstringchar   \&Egrave\; È
+altstringchar   \&oacute\; ó
+altstringchar   \&Oacute\; Ó
+altstringchar   \&ocirc\;  ô
+altstringchar   \&Ocirc\;  Ô
+altstringchar   \&ograve\; ò
+altstringchar   \&Ograve\; Ò
+altstringchar   \&aelig\;  æ
+altstringchar   \&AElig\;  Æ
+altstringchar   \&oslash\; ø
+altstringchar   \&Oslash\; Ø
+altstringchar   \&aring\;  å
+altstringchar   \&Aring\;  Å
+
+
+#
+# Plain TeX
+#
+
+altstringtype "plaintex" "TeX" ".tex" ".bib"
+
+altstringchar   \\\c{c} ç
+altstringchar   \\\c{C} Ç
+altstringchar   \\\'e   é
+altstringchar   \\\'E   É
+altstringchar   \\\^e   ê
+altstringchar   \\\^E   Ê
+altstringchar   \\\`e   è
+altstringchar   \\\`E   È
+altstringchar   \\\'o   ó
+altstringchar   \\\'O   Ó
+altstringchar   \\\^o   ô
+altstringchar   \\\^O   Ô
+altstringchar   \\\`o   ò
+altstringchar   \\\`O   Ò
+altstringchar   {\\ae}  æ
+altstringchar   {\\AE}  Æ
+altstringchar   {\\o}   ø
+altstringchar   {\\O}   Ø
+altstringchar   {\\aa}  å
+altstringchar   {\\AA}  Å
+
+
+#
+# Alternate form for NeXTSTEP charset (guesses by GHK; may need correction)
+#
+
+#  altstringtype "NeXT" "TeX" ".NeXT" ".rtf"
+
+#  altstringchar	Ý	é
+#  altstringchar	‰	É
+#  altstringchar	±	æ
+#  altstringchar	á	Æ
+#  altstringchar	ú	ø
+#  altstringchar	ê	Ø
+#  altstringchar	Ú	å
+#  altstringchar	†	Å
+
+#
+# Alternate forms for plain ASCII text files
+#
+altstringtype "ascii" "nroff" ".txt"
+
+altstringchar	ae	æ
+altstringchar	Ae	Æ
+altstringchar	oe	ø
+altstringchar	Oe	Ø
+altstringchar	aa	å
+altstringchar	Aa	Å
+
+#
+# Alternate forms for plain ASCII text files
+#
+altstringtype "iso246" "nroff" ".txt"
+
+altstringchar	\{	æ
+altstringchar	\[	Æ
+altstringchar	\|	ø
+altstringchar	\\	Ø
+altstringchar	\}	å
+altstringchar	\]	Å
+
+
+
+# Her er en oversikt over benyttede flagg:
+#
+# Brukt:         ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxy
+#
+# Tilgjengelig: z
+#
+# z kan brukes til å kontrollere sammensatte ord.
+
+
+prefixes
+
+# Ekte forstavelser:
+
+
+flag *a:
+    .              >       U               # ferdig > uferdig
+
+flag *b:
+    .              >       FORÎ            # dampe > fordampe
+
+flag *c:
+    .              >       GJENÎ           # vinne > gjenvinne
+
+flag *d:
+    .              >       HOVUDÎ          # sak > houedsak
+
+flag *e:
+    .              >       MIS             # tenke > mistenke
+
+flag *f:
+    .              >       SAM             # arbeid > samarbeid
+
+flag *g:       # forstavelse: in-
+    [^BLMPR]       >       INÎ             # effektiv > ineffektiv
+    L              >       ILÎ             # legal    > illegal
+    [BMP]          >       IM              # mobil    > immobil
+    R              >       IR              # regulær  > irregulær
+
+# Ikke behandlet er forstavelser som: an-, be-, er-, re-.
+#
+
+# Forstavelser som er preposisjoner eller adverb:
+#
+
+flag *h:
+    .              >       ETTERÎ          # leve > etterleve
+
+flag *i:
+    .              >       TILÎ            # stå > tilstå
+
+flag *j:
+    .              >       OVERÎ           # tid > overtid
+
+flag *k:
+    .              >       UNDERÎ          # kjenne > underkjenne
+
+flag *l:
+    .              >       PÅÎ             # føre > påføre
+
+flag *m:
+    .              >       AVÎ             # stå > avstå
+
+flag *n:
+    .              >       INNÎ            # føre > innføre
+
+flag *o:
+    .              >       UTÎ             # føre > utføre
+
+flag *p:
+    .              >       OPPÎ            # stå > oppstå
+
+flag *q:
+    .              >       NEDÎ            # bryte > nedbryte
+
+flag *r:
+    .              >       OMÎ             # gå > omgå
+
+flag *s:
+    .              >       SAMANÎ          # sett > samansett
+
+
+suffixes
+
+# Avledningsendelser:
+#
+
+
+flag *t:       # -ing-endelse i verb
+    E              >       -E,ING          # vandre > vandring
+#   E              >       -E,INGEN        # vandre > vandringen
+#   E              >       -E,INGENS       # vandre > vandringens
+    E              >       -E,INGA         # vandre > vandringa
+    [AIOUYØÅ]      >       ING             # gå     > gåing
+#   [AIOUYØÅ]      >       INGEN           # gå     > gåingen
+#   [AIOUYØÅ]      >       INGENS          # gå     > gåingens
+    [AIOUYØÅ]      >       INGA            # gå     > gåinga
+
+flag u:       # -lig-endelse i verb. Se også flagg Z.
+    [^LM]          >       LEG             # blå     > blålig
+    [^LM]          >       LEGE            # blå     > blålige
+    L              >       EG              # adel    > adelig
+    L              >       EGE             # adel    > adelige
+    M              >       MELEG           # rom     > rommelig
+    M              >       MELEGE          # rom     > rommelige
+
+
+
+
+
+
+
+flag *x:       # endelse: -skap
+    [^E]           >       SKAP            # klok  > klokskap
+    E              >       -E,SKAP         # regne > regnskap
+
+flag *y:       # endelse: -itet + ning (Ja, de er ortogonale)
+    [AEIOUYØ] [DLMNRSV]  >   ITET          # normal  > normalitet
+    [AEIOUYØ] [DLMNRSV]  >   ITETEN        # normal  > normaliteten
+    E L L          >       -ELL,ALITET     # formell > formalitet
+    E L L          >       -ELL,ALITETEN   # formell > formaliteten
+    Æ R            >       -ÆR,ARITET      # regulær > regularitet
+    Æ R            >       -ÆR,ARITETEN    # regulær > regulariteten
+    E              >       -E,NING         # lade   > ladning
+    E              >       -E,NINGEN       # lade   > ladningen
+
+
+# Bøyningsendelser:
+#
+
+
+flag *A:       # hankjønnsendelse: -en
+    E              >       N               # tanke > tanken
+    É              >       -É,EEN          # allé  > alleen
+#   É              >       -É,EENS         # allé  > alleens
+#   É              >       EN              # allé  > alleen  (Valgfritt)
+#   É              >       ENS             # allé  > alleens (Valgfritt)
+#   É              >       -E,"EEN         # allé  > all"een (Valgfritt, TeX)
+#   É              >       -E,"EENS        # allé  > all"eens(Valgfritt, TeX)
+    [^EÉM]         >       EN              # tank  > tanken
+    [^E] [DK] A M  >       MEN             # dam   > dammen, søm > sømmen
+    [E]  [DK] A M  >       EN              # lekam > lekamen
+    [^K] [LR] E M  >       MEN             # rem   > remmen, lem > lemmen
+    K R E M        >       EN              # krem  > kremen
+    [^R] E M       >       EN              # bohem > bohemen/medlemen
+#   L E M          >       MEN             # medlem> medlemmen
+    [^AEOUØ] M     >       EN              # karm  > karmen
+    [BDGV] O M     >       MEN             # dom   > dommen
+    [^BGLV] O M    >       EN              # gnom  > gnomen
+    [SKL] U M      >       MEN             # sum   > summen
+    [^SKL] U M     >       EN              # saum  > saumen
+
+flag *B:       # intetkjønnsendelse: -et, jevnfør flagg M
+    E              >       T               # eple  > eplet
+    É              >       -É,EET          # relé  > releet
+#   É              >       ET              # relé  > reléet  (Valgfritt)
+    [^DRT] [DT] E R>       -ER,RET         # alter > altret
+    [FGKSV] E L    >       -EL,LET         # fengsel>fengslet
+#   S P E L        >       ET              # spel  > spelet
+    M P E L        >       -EL,LET         # eksempel  > eksemplet
+#   [ST] E L       >       ET              # varsel>varselet
+    T T E L        >       -TEL,LET        # kapittel>kapitlet
+    [^EÉM]         >       ET              # barn  > barnet
+    [^AEOU] M      >       ET              # lim   > limet
+    [^E] A M       >       MET             # lam   > lammet
+    E A M          >       ET              # team  > teamet
+    [JV] E M       >       MET             # hjem  > hjemmet
+    [^JLV] E M     >       ET              # system> systemet
+    L E M          >       ET              # problem>problemet
+    [RK] O M       >       MET             # rom    > rommet
+    [^RK] O M      >       ET              # diplom > diplomet
+    [^EI] U M      >       ET              # volum  > volumet
+    [EI]  U M      >       -UM,ET          # museum > museet
+
+
+
+flag *C:       # hunkjønnsendelse og flertallsendelse: -a, jevnfør flagg N
+    E              >       -E,A            # jente  > jenta,  eple   > epla
+    É              >       -É,EA           # relé   > relea
+#   É              >       EA              # relé   > reléa  (Valgfritt)
+    [^EÉLMRT]      >       A               # ku     > kua,    barn   > barna
+    [^E] T         >       A               # pakt   > pakta
+    E T            >       -ET,A           # farget > farga
+    [^E] [LR]      >       A               # nål    > nåla,   bål    > båla
+    [^DFKMNPSTJ] E L>      -EL,LA          # tempel > templa
+    J E L          >       A               # sjel   > sjela
+    D D E L        >       -DEL,LA         # bøddel > bødla
+    [^D] D E L     >       A               # andel  > andela
+    F F E L        >       -FEL,LA         # bøffel > bøfla
+    K K E L        >       -KEL,LA         # nøkkel > nøkla
+    [^K] K E L     >       -EL,LA          # nøkkel > nøkla
+    M M E L        >       -MEL,LA         # tommel > tomla
+    [^M] M E L     >       A               # kamel  > kamela
+    N E L          >       A               # tunnel>  tunnela
+    P P E L        >       -PEL,LA         # nippel > nipla
+    [^P] P E L     >       A               # spel   > spela
+    S S E L        >       -SEL,LA         # trussel> trusla
+    [^S] S E L     >       -EL,LA          # barsel > barsla
+    T T E L        >       -TEL,LA         # tittel > titla
+    [^T] T E L     >       -EL,LA          # apostel> apostla
+    [^FJM] E R     >       -ER,RA          # hulder > huldra, teater > teatra
+    [FJM] E R      >       A               # oppgjer  > oppgjera
+    [^AEOU] M      >       A               # form   > forma,  rim    > rima
+    A M            >       MA              # gram   > gramma
+    J E M          >       MA              # hjem   > hjemma
+    [^J] E M       >       A               # problem> problema
+    [RV] O M       >       MA              # rom    > romma
+    [^RV] O M      >       A               # symptom> symptoma
+    [^EIR] U M     >       A               # volum  > voluma
+    [EIR] U M      >       -UM,A           # museum > musea
+
+flag *D:       # flertallsendelse: -er og -e
+    E              >       -E,AR           # kampanje
+    É              >       -É,EAR          # relé   > relear
+#   É              >       AR              # relé   > reléer  (Valgfritt)
+    [^EÉLMR]       >       AR              # gut    > gutar
+    [^E] [LR]      >       AR              # ball   > ballar
+    [^DFKMNPSTJ] E L>       -EL,LAR        # tempel > templar
+    J E L          >       AR              # sjel   > sjelar
+    D D E L        >       -DEL,LAR        # bøddel > bødlar
+    [^D] D E L     >       AR              # andel  > andelAR
+    F F E L        >       -FEL,LAR        # bøffel > bøflAR
+    K K E L        >       -KEL,LAR        # nøkkel > nøklAR
+    [^K] K E L     >       -EL,LAR         # nøkkel > nøklAR
+    M M E L        >       -MEL,LAR        # tommel > tomlAR ?formel?
+    [^M] M E L     >       AR              # kamel  > kamelAR
+    N E L          >       AR              # tunnel>  tunnelAR
+    P P E L        >       -PEL,LAR        # nippel > niplAR
+    [^P] P E L     >       -EL,LAR         # stempel> stemplAR
+    S S E L        >       -SEL,LAR        # trussel> truslAR
+    [^S] S E L     >       -EL,LAR         # barsel > barslAR
+    T T E L        >       -TEL,LAR        # tittel > titlAR
+    [^T] T E L     >       -EL,LAR         # apostel> apostlAR
+    [^FMK] E R     >       -AR,RAR         # alder >  aldrar
+#   F E R          >       -FER,RE         # offer  > ofre
+#   M E R          >       -MER,RE         # nummer > numre
+    K E R          >       -ER,RAR         # åker > åkrar
+    [^AEOUØ] M  >       AR              # karm   > karmAR
+    D L E M        >       MAR             # medlem > medlemmAR
+    B L E M        >       AR              # problem> problemAR
+    [^LR] E M      >       AR              # system > systemAR
+    [^KBD] [LR] E M>       MAR             # rem    > remmAR, lem > lemmAR
+    K R E M        >       AR              # krem   > kremAR
+    [AØ] M         >       MAR             # kam    > kammAR
+    [BDG] O M      >       MAR             # dom    > dommAR
+    [^S] [BDGL] O M>       AR              # dom    > domAR
+    [^BDGL] O M    >       AR              # aksiom > aksiomAR
+    [^EIKS] U M    >       AR              # volum  > volumAR
+    [KS] U M       >       MAR             # sum    > summAR
+    [EI] U M       >       -UM,AR          # museum > museAR
+
+
+flag *E:       # flertallsendelse: -er og -e
+    E              >       R               # kvinne > kvinner
+    É              >       -É,EER          # relé   > releer
+#   É              >       ER              # relé   > reléer  (Valgfritt)
+    [^EÉLMR]       >       ER              # gutt   > gutter
+    [^E] [LR]      >       ER              # ball   > baller
+    [^DFKMNPSTJ] E L>       -EL,LER        # tempel > templer
+    J E L          >       ER              # sjel   > sjeler
+    D D E L        >       -DEL,LER        # bøddel > bødler
+    [^D] D E L     >       ER              # andel  > andeler
+    F F E L        >       -FEL,LER        # bøffel > bøfler
+    K K E L        >       -KEL,LER        # nøkkel > nøkler
+    [^K] K E L     >       -EL,LER         # nøkkel > nøkler
+    M M E L        >       -MEL,LER        # tommel > tomler ?formel?
+    [^M] M E L     >       ER              # kamel  > kameler
+    N E L          >       ER              # tunnel>  tunneler
+    P P E L        >       -PEL,LER        # nippel > nipler
+    [^P] P E L     >       -EL,LER         # stempel> stempler
+    S S E L        >       -SEL,LER        # trussel> trusler
+    [^S] S E L     >       -EL,LER         # barsel > barsler
+    T T E L        >       -TEL,LER        # tittel > titler
+    [^T] T E L     >       -EL,LER         # apostel> apostler
+    [^FMK] E R     >       -ER,RE          # teater > teatre
+    F E R          >       -FER,RE         # offer  > ofre
+    M E R          >       -MER,RE         # nummer > numre
+    K E R          >       -KER,RE         # sikker > sikre (Fy! ikke subst.)
+    [^AEOUØ] M     >       ER              # karm   > karmer
+    D L E M        >       MER             # medlem > medlemmer
+    [BD] L E M     >       ER              # problem> problemer/medlemer
+    [^LR] E M      >       ER              # system > systemer
+    [^KBD] [LR] E M>       MER             # rem    > remmer, lem > lemmer
+    K R E M        >       ER              # krem   > kremer
+    [AØ] M         >       MER             # kam    > kammer
+    [BDGL] O M     >       MER             # dom    > dommer
+    [^S] [BDGL] O M>       ER              # dom    > dommAR
+    [^BDGL] O M    >       ER              # aksiom > aksiomer
+    [^EIKS] U M    >       ER              # volum  > volumer
+    [KS] U M       >       MER             # sum    > summer
+    [EI] U M       >       -UM,ER          # museum > museer
+
+flag *F:       # flertallsendelse: -ene
+    E              >       -E,ANE          # kvinne > kvinnene
+    É              >       -É,EANE         # relé   > releANE
+#   É              >       ANE             # relé   > reléANE (Valgfritt)
+    [^EÉLMR]       >       ANE             # gutt   > guttANE
+    [^E] [LR]      >       ANE             # ball   > ballANE
+    [^DFKMNPSTJ] E L>      -EL,LANE        # tempel > templANE
+    J E L          >       ANE             # sjel   > sjelANE
+    D D E L        >       -DEL,LANE       # bøddel > bødlANE
+    [^D] D E L     >       ANE             # andel  > andelANE
+    F F E L        >       -FEL,LANE       # bøffel > bøflANE
+    K K E L        >       -KEL,LANE       # nøkkel > nøklANE
+    [^K] K E L     >       -EL,LANE        # nøkkel > nøklANE
+    M M E L        >       -MEL,LANE       # tommel > tomlANE
+    [^M] M E L     >       ANE             # kamel  > kamelANE
+    N E L          >       ANE             # tunnel>  tunnelANE
+    P P E L        >       -PEL,LANE       # nippel > niplANE
+    [^P] P E L     >       -EL,LANE        # stempel> stemplANE
+    S S E L        >       -SEL,LANE       # trussel> truslANE
+    [^S] S E L     >       -EL,LANE        # barsel > barslANE
+    T T E L        >       -TEL,LANE       # tittel > titlANE
+    [^T] T E L     >       -EL,LANE        # apostel> apostlANE
+    [^FM] E R      >       -ER,RANE        # teater > teatrANE
+    F E R          >       -FER,RANE       # offer  > ofrANE (ofrer skifer!)
+    M E R          >       -MER,RANE       # nummer > numrANE
+    [^AEOUØ] M     >       ANE             # arm    > armANE
+    [AØ] M         >       MANE            # kam    > kammANE
+    J E M          >       MANE            # hjem   > hjemmANE
+    D L E M        >       MANE            # medlem > medlemmANE
+    B L E M        >       ANE             # problem> problemANE
+    [^KBD] [LR] E M>       MANE            # rem    > remmANE, lem > lemmANE
+    K R E M        >       ANE             # krem   > kremANE
+    [^JLR] E M     >       ANE             # system > systemANE
+    [BDGR] O M     >       MANE            # rom    > rommANE
+    [^S] [BDGL] O M>       ANE             # dom    > dommAR
+    [^BDGLR] O M   >       ANE             # aksiom > aksiomANE
+    [^EIKS] U M    >       ANE             # album  > albumANE
+    [KS] U M       >       MANE            # sum    > summANE
+    [EI] U M       >       -UM,ANE         # museum > museANE
+
+
+
+flag *G:       # flertallsendelse: -ene
+    E              >       NE              # kvinne > kvinnene
+    É              >       -É,EENE         # relé   > releene
+#   É              >       ENE             # relé   > reléene (Valgfritt)
+    [^EÉLMR]       >       ENE             # gutt   > guttene
+    [^E] [LR]      >       ENE             # ball   > ballene
+    [^DFKMNPSTJ] E L>      -EL,LENE        # tempel > templene
+    J E L          >       ENE             # sjel   > sjelene
+    D D E L        >       -DEL,LENE       # bøddel > bødlene
+    [^D] D E L     >       ENE             # andel  > andelene
+    F F E L        >       -FEL,LENE       # bøffel > bøflene
+    K K E L        >       -KEL,LENE       # nøkkel > nøklene
+    [^K] K E L     >       -EL,LENE        # nøkkel > nøklene
+    M M E L        >       -MEL,LENE       # tommel > tomlene
+    [^M] M E L     >       ENE             # kamel  > kamelene
+    N E L          >       ENE             # tunnel>  tunnelene
+    P P E L        >       -PEL,LENE       # nippel > niplene
+    [^P] P E L     >       -EL,LENE        # stempel> stemplene
+    S S E L        >       -SEL,LENE       # trussel> truslene
+    [^S] S E L     >       -EL,LENE        # barsel > barslene
+    T T E L        >       -TEL,LENE       # tittel > titlene
+    [^T] T E L     >       -EL,LENE        # apostel> apostlene
+    [^FM] E R      >       -ER,RENE        # teater > teatrene
+    F E R          >       -FER,RENE       # offer  > ofrene (ofrer skifer!)
+    M E R          >       -MER,RENE       # nummer > numrene
+    [^AEOUØ] M     >       ENE             # arm    > armene
+    [AØ] M         >       MENE            # kam    > kammene
+    J E M          >       MENE            # hjem   > hjemmene
+    D L E M        >       MENE            # medlem > medlemmene
+    [BD] L E M     >       ENE             # problem> problemene
+    [^KBD] [LR] E M>       MENE            # rem    > remmene, lem > lemmene
+    K R E M        >       ENE             # krem   > kremene
+    [^JLR] E M     >       ENE             # system > systemene
+    [BDGLR] O M    >       MENE            # rom    > rommene
+    [^S] [BDGL] O M>       ENE             # dom    > dommAR
+    [^BDGLR] O M   >       ENE             # aksiom > aksiomene
+    [^EIKS] U M    >       ENE             # album  > albumene
+    [KS] U M       >       MENE            # sum    > summene
+    [EI] U M       >       -UM,ENE         # museum > museene
+
+
+flag *I:       # flertallsendelse: -e og -ne
+    E R            >       E               # maler  > malere
+    E R            >       NE              # maler  > malerne
+    [ÆØ] R         >       NE              # klær   > klærne
+    [ÆØ] R         >       NES             # klør   > klørnes
+    E N            >       -EN,NA        # våpen  > våpna
+    Y E            >       -E,NE           # øye    > øyne
+    Y E            >       -E,NENE         # øye    > øynene
+    I V E          >       -IVE,EV         # skrive > skrev
+    I V E          >       -IVE,EVET       # skrive > skrevet
+    I K E          >       -IKE,EK         # vike   > vek
+    I K E          >       -IKE,EKET       # vike   > veket
+    U M            >       ET              # kalium > kaliumet
+    U M            >       ETS             # kalium > kaliumets
+
+
+flag *J:       # genitivs- og passivendelse: -s
+    [^S]           >       S               # mann > manns, kaste > kastes
+
+flag *K:       # passivendelse: -es
+               # sterk bøying
+               # nasjonalitetsbøying.
+     E              >       -E,AST          # få > fåes, omgikk > omgikkes
+#    E              >       -E,ÆR           # tre  > trær, håndkle > håndklær
+#    E              >       -E,ÆRNE         # tre  > trærne, åkle > åklærne
+#    E R            >       -ER,SK          # cubaner > cubansk
+#    E R            >       -ER,SKE         # cubaner > cubanske
+
+
+flag *L:       # presensendelse: -r
+    E R            >       AR              # karakter > karakterer
+    E R            >       ANE             # karakter > karakterane
+
+
+
+flag *M:       # fortidsendelse: -et med svak partisippbøyning, jevnfør flagg B
+               # Man kan alltid skrive ete på slutten, selv om det kanskje
+               # ikke tar seg så godt ut. Kommenter ut hvis du ikke liker det.
+               # Flertallsord som penger og myndigheter.
+               # Noe sterk bøying.
+    E              >       -E,O            # vindauge  > vindaugo
+    O K            >       -OK,ØKER        # bok      > bøker
+    O K            >       -OK,ØKENE       # bok      > bøkene
+    O R            >       -OR,ØDRER       # mor      > mødre
+    O R            >       -OR,ØDRENE      # bror     > brødrene
+#   A R            >       -AR,EDRAR       # far      > fedre
+#   A R            >       -AR,EDRANE      # far      > fedrane
+    A F T          >       -AFT,EFTER      # kraft    > krefter
+    A F T          >       -AFT,EFTENE     # kraft    > kreftene
+    [BN] O T       >       -OT,ØTER        # not      > nøter
+    [BN] O T       >       -OT,ØTENE       # bot      > bøtene
+    [FR] O T       >       -OT,ØTTER       # rot      > røtter
+    [FR] O T       >       -OT,ØTTENE      # fot      > føttene
+    A N N          >       -ANN,ENN        # mann     > menn
+    A N N          >       -ANN,ENNENE     # mann     > mennene
+    A N G          >       -ANG,ENGER      # stang    > stenger
+    A N G          >       -ANG,ENGENE     # stang    > stengene
+    E R            >       -ER,ENE         # penger   > pengene
+    A R            >       -AR,ANE         # penger   > pengene
+    Å              >       -Å,OD           # stå      > stod
+    T A            >       -A,OK           # ta       > tok
+
+
+
+
+flag *O:       # fortidsendelse: -te og -t
+    [^T] E         >       -E,TE           # sende  > sendte (Ikke blote ->
+    [^T] E         >       -E,T            # sende  > sendt           blotte)
+    A T T E R      >       A               # datter   > dattera
+    A T T E R      >       -ATTER,ØTRE     # datter   > døtre
+    A T T E R      >       -ATTER,ØTRER    # datter   > døtrer
+    A T T E R      >       -ATTER,ØTRENE   # datter   > døtrene
+    A              >       -A,OG           # dra      > drog
+    A              >       DD              # dra      > dradd
+    A              >       TT              # dra      > dratt
+
+flag *P:       # fortidsendelse: -dde og -dd
+    [AEIOUYØÅ]     >       DDE             # bo     > bodde
+    [AEIOUYØÅ]     >       DD              # bo     > bodd
+
+flag *Q:       # fortidsendelse: -de og -d
+    E              >       -E,DE           # bøye   > bøyde
+    E              >       -E,D            # bøye   > bøyd
+
+flag *R:       # imperativ
+    [^M] E         >       -E,-            # sende  > send
+    [^M] M E       >       -E,-            # lime   > lim
+    M M E          >       -ME,-           # tømme  > tøm
+    E R E          >       -ERE,ÉR         # fiksere> fiksér (valgfritt)
+
+flag *S:       # presens partisipp
+    E              >       -E,ANDE         # ligge  > liggende
+    [AIOUYÆØÅ]     >       ANDE            # stå    > stående
+
+flag *T:       # adjektivendelse: -ete (Subflagg av flagg M)
+    E              >       T           # suse     > suset
+    E              >       TE          # suse     > susete
+    E T            >       E           # kornet   > kornete
+
+flag *U:       # sterk partisippbøyning: -en og -ne
+               # Andre sterke bøyninger
+    E T            >       -T,N            # skrevet > skreven
+    [^M] E T       >       -ET,NE          # skrevet > skrevne
+    M E T          >       -MET,NE         # kommet  > komne
+    E L E          >       -ELE,AL         # stjele  > stjal
+    E L E          >       -ELE,ÅLET       # stjele  > stjålet
+    E R E          >       -ØRE,ORDE       # gjøre   > gjorde
+    E R E          >       -ØRE,ORT        # gjøre   > gjort
+    E G G E        >       -EGGE,AGT       # legge   > lagt
+    E G G E        >       -EGGE,AGTE      # legge   > lagte
+    U M            >       -UM,A           # sentrum > sentra
+    G I            >       -GI,AV          # gi      > gav
+
+
+flag *V:       # adjektivendelse: -e
+    [^LMNEO]       >       E               # stor    > store
+    [^E] [LN]      >       E               # fin     > fine
+    [^M] E L       >       -EL,LE          # edel    > edle
+    F E N          >       -FEN,NE         # guffen  > gufne
+    M E L          >       -MEL,LE         # gammel  > gamle
+    [^FKLS] E N    >       -EN,NE          # doven   > dovne
+    S S E N        >       -SEN,NE         # frossen > frosne
+    [^S] S E N     >       -EN,NE          # pløsen  > pløsne
+    K K E N        >       -KEN,NE         # sprukken> sprukne
+    [^K] K E N     >       -EN,NE          # lunken  > lunkne
+    L L E N        >       -LEN,NE         # ullen   > ulne
+    [^L] L E N     >       -EN,NE          # kjælen  > kjælne
+    [AEIOUØ] M     >       ME              # dum     > dumme
+    [^AEIOUØ] M    >       E               # abnorm  > abnorme
+
+# Genitiv av substantiverte adjektiv er utelatt, men jevnfør flaggene J og K.
+
+flag *W:       # intetkjønn i adjektiv: -t og -tt
+               # Flertall ing-endelse i verb 
+    [^FKLNTIAØÅ]   >       T               # stor   > stort
+    [^F] F         >       T               # apokryf> apokryft
+    F F            >       -F,T            # tøff   > tøft
+    [^K] K         >       T               # besk   > beskt
+    K K            >       -K,T            # frekk  > frekt
+    [^L] L         >       T               # normal > normalt
+    U L L          >       T               # full   > fullt
+    [^U] L L       >       -L,T            # vill   > vilt
+    [^N] N         >       T               # doven  > dovent
+    N N            >       -N,T            # grønn  > grønt
+    E I            >       T               # grei   > greit
+    [^E] I         >       TT              # fri    > fritt
+    [AØÅ]          >       TT              # blå    > blått
+
+
+
+flag *X:       # komparativ: -ere -st -ste
+    [^E] [^ME]     >       ARE             # glad  > gladere
+    [EO] [^LRNEM]  >       ARE             # fet   > fetere
+    E L            >       -EL,LARE        # edel  > edlere
+    E R            >       -ER,RARE        # mager > magrere
+    E N            >       -EN,NARE        # doven > dovnere
+    [AOU] M        >       MARE            # dum   > dummere
+    [^E] [^MGE]    >       AST             # glad  > gladest
+    [^E] [^MGE]    >       ASTE            # glad  > gladeste
+    [^E] [OI] [MGE]>       AST             # grundig > grundigst
+    [^E] [OI] [MGE]>       ASTE             # varsom > varsomste
+    E [OI] [MGE]   >       AST             # feig  > feigest
+    E [OI] [MGE]   >       ASTE            # seig  > seigeste
+    E [^LRNE]	   >       AST             # fet   > fetest
+    E [^LRNE]	   >       ASTE            # fet   > feteste
+    E L            >       -EL,LAST        # edel  > edlest
+    E L            >       -EL,LASTE       # edel  > edleste
+    E R            >       -ER,RAST        # mager > magrest
+    E R            >       -ER,RASTE       # mager > magreste
+    E N            >       -EN,NAST        # doven > dovnest
+    E N            >       -EN,NASTE       # doven > dovneste
+    [AU] M         >       MAST            # dum   > dummest
+    [AU] M         >       MASTE           # dum   > dummeste
+
+
+flag *Y:
+
+    E              >       -E,INGAR        # vurdere> vurderingar
+    E              >       -E,INGANE       # vurdere> vurderingane
+    [AIOUYØÅ]      >       INGAR           # gå     > gåinger
+    [AIOUYØÅ]      >       INGANE          # gå     > gåingene
+
+
+flag Z:
+    [^E]           >       ELIG            # vitenskap  > vitenskapelig
+    [^E]           >       ELIGE           # ekteskap   > ekteskapelige
+    E              >       -E,BAR          # måle > målbar
+    E              >       -E,BART         # måle > målbart
+    E              >       -E,BARE         # måle > målbare
+
+
+#Bokstaver med spesiell betydning i regexp-syntaks kan ikke være
+#med i kryssprodukter i munchlist (bug, reported).
+#Konkret: Flaggene [^]\` kan ikke ha *.
+
+flag \[:      # endelse: -nings
+    .              >       ÎMESSIG          # fag > fagmessig
+    .              >       ÎMESSIGE         # fag > fagmessige
+
+
+flag \]:      # endelse: -bar
+    .              >       SÎMESSIG         # tid > tidsmessig
+    .              >       SÎMESSIGE        # tid > tidsmessige
+
+flag \^:      # endelse: -aktig
+    .              >       ÎAKTIG           # voks > voksaktig
+    .              >       ÎAKTIGE          # voks > voksaktige
+
+#Flagget under skal kun brukes i sammensatte ord.  Munchlist
+#håndterer ikke dette (erstatter med *J-flagg), så vi må trikse litt.
+#Dette gjøres i munch.sh, og ~-tegnet er *IKKE* en kommentar.
+
+flag ~\\:
+    [^S]           >        S              #~ advarsel > advarsels-
+
+flag ~\_:      # endelse: -ings
+    E              >       -E,INGS         #~ investere > investerings-
+    [DGKNPRSTUV]   >       E               #~ prest  > preste-
+    U M            >       -UM,E           #~ medium > medie-
+    [LR]  M        >       E               #~ orm    > orme-
+    G E L          >       -EL,LE          #~ engel  > engle-
+    [^G] E L       >       E               #~ sjel   > sjele-
+    [^E] L         >       E               #~ fugl   > fugle-
+
+# ZYZYZY er et hack for å støtte ord som kun er tilatt i sammensetninger.
+# For eksempel skal Oslo skrives med stor bokstav, men oslokvinne er lovlig.
+# En feature er at oslozyzyzy blir lovlig...
+
+flag ~\`:
+    E              >       -E,NINGS        #~ avskrive > avskrivnings-
+    Z Y Z Y Z Y    >       -ZYZYZY,-       #- flerezyzyzy > fler-
+
+# Ikke behandlet er avledningsendelser som: -dom, -sjon, -ig, -isk.
+# Fjerne alle flagg som genererer et annet basisord. (ert -> erts)
+# flere -> fler-

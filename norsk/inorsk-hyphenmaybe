@@ -1,0 +1,229 @@
+: Use /bin/bash
+
+# Copyright: Rune Kleveland (2000) <runekl@math.uio.no>
+# License  : GPL
+# Version  : 0.9
+
+# This script takes a (TeX) file as argument and prints every word not
+# in the Norwegian dictionary hyphenated by TeX.  The parsing of the
+# file is done by ispell.
+
+# It can be used to find out which words the Norwegian patterns
+# hyphenates incorrectly, because the Norwegian patterns I have
+# generated should hyphenate every word in the norsk and nynorsk
+# dictionaries correctly.  The incorrecly hyphenated words should be
+# included in a \hyphenation command.  If there already are
+# hyphenation commands in the TeX document, that is taken into
+# consideration unless the -noparse option is given.
+
+# If you tell me about incorrectly hyphenated common words, I might
+# fix it in a future version.
+
+# If multi level hyphenation is available, it is used.  Unfortunately
+# this requires an experimental TeX today, and few people seem to have
+# that.
+
+# nohyphinsecure [-p patterns] [-l language] [-e] [-h] [file]
+#
+#    -p patterns  Choose the patterns to hyphenate with.
+#                 The default is norsk, in which case TeX
+#                 executes \language=\l@norsk.
+#
+#    -l language  Choose the ispell dictionary.  The default is norsk.
+#
+#    -ll language Filter through extra dictionary.  The default is nynorsk.
+#                 Use false to avoid filtering.
+#
+#    -e           Throw away all english words.
+#
+#    -h           Print only words that does contain a hyphen
+#
+#    -nosort      Do not sort the words, but output in the order they appear
+#
+#    -nroff       Ispell parsing keyword.  Overrride default TeX.
+#
+#    -noparse     Don't try to find hyphenation commands in the input file.
+
+
+TMP=/tmp
+ISPELLMODE=tex
+LATEX=latex
+LANGUAGE=norsk
+LLANGUAGE=nynorsk
+CH=a-zæøåéèêôóòçA-ZÆØÅÉÈÊÔÓÒÇ
+PATTERNS=${LANGUAGE}
+IGNOREENGLISH=false
+FORMAT=-t
+ONLYHYPHEN=false
+PARSEFORHYPH=true
+SORTING=true
+
+while [ $# != 0 ]
+do
+    case "$1" in
+	-p)
+	    PATTERNS=$2
+	    shift
+	    ;;
+	-l)
+	    LANGUAGE=$2
+	    shift
+	    ;;
+	-ll)
+	    LLANGUAGE=$2
+	    shift
+	    ;;
+	-e)
+	    IGNOREENGLISH=true
+	    ;;
+	-h)
+	    ONLYHYPHEN=true
+	    ;;
+	-nroff)
+	    FORMAT=-n
+	    ;;
+	-noparse)
+	    PARSEFORHYPH=false
+	    ;;
+	-nosort)
+	    SORTING=false
+	    ;;
+	-)
+	    break
+	    ;;
+	-*)
+	    echo 'Usage: nohyphinsecure [-p patterns] [-l dictionary] [-ll dictionary] [-e] [-h] [file] ...' \
+	      1>&2
+	    exit 2
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+    shift
+done
+
+
+# Parse for \hyphenation command.  Assumes you use TeX gently.
+
+if [ ${PARSEFORHYPH} = true ]
+then
+  cat $@ > ${TMP}/hyphen0.tmp
+  sed -e 's/%.*//' \
+      -e '/\\hyphenation[ 	]*{.*}/ p' \
+      -e '/\\hyphenation[ 	]*{[^}]*$/,/}/! D' ${TMP}/hyphen0.tmp \
+    | sed -e 's/^.\+\(\\hyphenation[ 	]*{\)/\1/' \
+    > ${TMP}/hyphen1.tmp
+  cat ${TMP}/hyphen0.tmp
+else
+  rm -f ${TMP}/hyphen1.tmp
+  cat $@
+fi | \
+if [ ${LANGUAGE} = false ]
+then
+  tr -cs ${CH} '\n'
+elif [ ${LLANGUAGE} = false ]
+then
+  tr '.,;:' '    ' \
+    | ispell -B -l -d ${LANGUAGE}  ${FORMAT}
+else
+  tr '.,;:' '    ' \
+    | ispell -B -l -d ${LANGUAGE}  ${FORMAT} \
+    | ispell -B -l -d ${LLANGUAGE} ${FORMAT}
+fi \
+  > ${TMP}/hyphen2.tmp
+
+cd ${TMP}
+
+if [ "${IGNOREENGLISH}" = true ]
+then
+  (grep -v '[^a-zA-Z]' hyphen2.tmp | ispell -l -d english; \
+   grep '[^a-zA-Z]' hyphen2.tmp)
+else
+  cat hyphen2.tmp
+fi | \
+if [ $SORTING = true ]
+then
+  sort \
+  | uniq -c \
+  | sort -n -r -s
+else
+  cat
+fi \
+  | sed -e '1 i \
+\\writelog{' \
+      -e '1000~1000 a \
+}\
+\\writelog{' \
+      -e '$ a \
+}' \
+  > hyphen3.tmp
+
+TEXFILE='\nonstopmode
+\documentclass{minimal}
+\usepackage{t1enc}
+\makeatletter
+\language=\l@'${PATTERNS}'\lefthyphenmin=2\righthyphenmin=2
+\ifx\gendiscretionary\@undefined\else
+\hyphenclassesstate=1\hyphenclasses=5\exhyphenclass=4
+\fi
+\InputIfFileExists{./hyphen1.tmp}{}
+\makeatother
+\def\writelog#1{\setbox0=\vbox{\parfillskip0pt \hsize16383.99999pt
+\pretolerance=-1 \tolerance=-1 \hbadness=0 \showboxdepth=0 \ #1}}
+\begin{document}
+\input{hyphen3.tmp}
+\typeout{----------}
+\end{document}'
+
+
+${LATEX} ${TEXFILE} 2&>/dev/null
+
+rm -f hyphen[0123].tmp
+
+# Parse the log file
+
+sed -e '1,/(hyphen3.tmp/ D' \
+    -e '/\\hbox/ D' \
+    -e '/^ *$/ D' \
+    -e 's/^\(\[\]\)\? *\\T1[^ ]* /*/' \
+    -e '/^----------/,$ c \
+ '  minimal.log \
+  | tr -d '\n)' \
+  | tr -s ' ' '\n' \
+  | sed -e 's/-\*//' \
+        -e '1 s/\*//' \
+        -e 's/\*/\
+/'      -e '/^ *$/ D' \
+	-e 's/\^\^c5/Å/g' \
+	-e 's/\^\^c6/Æ/g' \
+	-e 's/\^\^d8/Ø/g' \
+	-e 's/\^\^c7/Ç/g' \
+	-e 's/\^\^c8/È/g' \
+	-e 's/\^\^c9/É/g' \
+	-e 's/\^\^d2/Ò/g' \
+	-e 's/\^\^d3/Ó/g' \
+	-e 's/\^\^d4/Ô/g' \
+	-e 's/\^\^e5/å/g' \
+	-e 's/\^\^e6/æ/g' \
+	-e 's/\^\^f8/ø/g' \
+	-e 's/\^\^e7/ç/g' \
+	-e 's/\^\^e8/è/g' \
+	-e 's/\^\^e9/é/g' \
+	-e 's/\^\^f2/ò/g' \
+	-e 's/\^\^f3/ó/g' \
+	-e 's/\^\^f4/ô/g' | \
+if [ $SORTING = true ]
+then
+  sed -e N -e 's/\n/ /'
+else
+  cat
+fi | \
+if [ "${ONLYHYPHEN}" = true ]
+then
+  grep '\-'
+else
+  cat
+fi
+
+rm -f minimal.log minimal.aux minimal.dvi
