@@ -1,0 +1,76 @@
+<html>
+<head>
+<title>Norsk stavekontroll</title>
+<!-- toralf.net laster sidene via en frame; target="_top" er nødvendig -->
+<!-- for å bytte ut denne når linker velges (i stedet for bare å -->
+<!-- oppdatere innholdet.)-->
+<base href="http://www.toralf.net/spell/" target="_top">
+</head>
+<body bgcolor="white">
+Enda en midlertidig side... Vil etterhvert inneholde info om norske
+ordlister for diverse stavekontroller...
+
+<p>
+OK, litt mer for den utålmodige - her er noen interessante filer:
+<ul>
+<li><a href="Makefile">Makefile</a></li>
+<li><a href="iaff2myaff.pl">iaff2myaff.pl</a>
+<li><a href="expndflg.pl">expndflg.pl</a>
+<li><a href="ispell-norsk-2.0p2.tar.gz">ispell-norsk-2.0p2.tar.gz</a>
+(Distribusjon fra 
+<a href="http://folk.uio.no/runekl/dictionary.html">
+http://folk.uio.no/runekl/dictionary.html</a>
+oppdatert med over nevnte filer.)
+<li><a href="ispell-3.2.06.no.patch">ispell-3.2.06.no.patch</a>
+<li><a href="http://ftp.services.openoffice.org/pub/OpenOffice.org/contrib/dictionaries/nb_NO.zip">nb_no.zip</a>,
+<a href="http://ftp.services.openoffice.org/pub/OpenOffice.org/contrib/dictionaries/nn_NO.zip">nn_no.zip</a>
+(Ordlister via nedlasting fra OpenOffice.org.)
+<li><a href="moz-oodict.sh">moz-oodict.sh</a>: A simple shell-script
+that may be used to transfer dictionaries from OpenOffice.org to Mozilla.
+</ul>
+
+<p>
+For å bygge det hele, prøv følgende:
+<pre>
+tar xvzf ispell-3.2.06.tar.gz
+patch -p0 ispell-3.2.06.no.patch
+cd ispell-3.2.06
+cp local.h.samp local.h
+make
+make unsq
+
+cd languages
+rm -rf norsk
+tar xvzf ispell-norsk-2.0p1.tar.gz
+cd norsk
+make
+make myspell-dist
+</pre>
+Merk: Vil benytte kommandoer bygd ved hjelp av
+<a href="http://fmg-www.cs.ucla.edu/geoff/tars/ispell-3.2.06.tar.gz">ispell-3.2.06.tar.gz</a>
+under generering av ordlister. Bygging via <i>installert</i> ispell
+er ikke testet, bl.a. fordi en del av dagens Linux-distribusjoner
+innholder <a href="http://aspell.sourceforge.net/">aspell</a> i stedet.
+</body>
+<p>
+Nyeste versjon støtter også aspell "wordlist distributions". Disse kan
+bygges ved å kalle
+<pre>
+make aspell-dist
+</pre>
+i stedet for, eller i tillegg til, <tt>make myspell-dist</tt> i
+kommandosekvensen. Relevante versjoner av aspell-kommandoer må
+være tilgjengelig via <i>PATH</i>; oppsettet er testet kun med nyeste
+versjon. Det kan også være nyttig å basere seg på
+source-distribusjonen her, f.eks. ved å gjøre
+<pre>
+tar cvzf aspell-0.60.2.tar.gz
+cd aspell-[0-9]*
+./configure
+make
+PATH=`pwd`:${PATH}
+export PATH
+</pre>
+før man kjører over nevnte make-kommando.
+
+</html>
