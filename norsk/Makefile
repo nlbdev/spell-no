@@ -7,10 +7,10 @@
 
 SHELL = /bin/sh
 MAKE = make
-
-CONFIG		=	../../config.sh
-PATHADDER	=	../..
-BUILDHASH	=	../../buildhash
+ISPELLDIST=../..
+CONFIG		=	$(ISPELLDIST)/config.sh
+PATHADDER	=	$(ISPELLDIST)
+BUILDHASH	=	$(ISPELLDIST)/buildhash
 
 # The following variables make it easy to adapt this Makefile to
 # numerous languages.
