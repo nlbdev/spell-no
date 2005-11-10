@@ -259,6 +259,14 @@ norsk.hash nynorsk.hash: %.hash: %.mch %.aff ${BUILDHASH}
 norsk.aff nynorsk.aff: %.aff: %.aff.in
 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
 
+norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
+	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
+	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
+	    -e 's/\(^flag  *\)~\(..\?:\)/\1\2/'  \
+	    -e 's/^\(compoundwords\) controlled z/\1 off/' $< \
+	 > $@
+	@echo -e '\n\nflag z: # Brukes for å bevare z-flagg gjennom munchlist\n    .              >       YYYY            # *HACK*' >> $@
+
 norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff
 	echo 'QQQQQQQQ' > FAKEDICT
 	${BUILDHASH} -s FAKEDICT $< $@
@@ -284,6 +292,12 @@ nb_NO.aff: norsk.aff
 	$(ISPELL2MYAFF)
 
 nn_NO.aff: nynorsk.aff
+	$(ISPELL2MYAFF)
+
+nb_NO.aff.munch: norsk.aff.munch
+	$(ISPELL2MYAFF)
+
+nn_NO.aff.munch: nynorsk.aff.munch
 	$(ISPELL2MYAFF)
 
 # Note: mch.cnt is secondary output from buildhash
@@ -373,7 +387,7 @@ munch0.%: ${LANGUAGE}.words.%
 	wc -l < $< > $@
 	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
 
-$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff 
+$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff.much
 	./$^ 2> /dev/null | tail +2 > $@
 
 munch2.%: munch1.%
@@ -527,14 +541,16 @@ norsk.mch: %.mch : %.comp3.mch forkort.txt $(addprefix munched.,${CATHEGORIES})
 # a few lines.  The trickery to use it is more.
 
 
+munch0.nynorsk: words.nynorsk
+	rm -f $@
+	wc -l < $< > $@
+	tr -d '-' < $< | sed -e 's/ .*//' -e 's/ \*//' >> $@
 
-
-nynorsk.mch: words.nynorsk ny${AFFIXES}.munch
-	PATH=$(PATHADDER):$$PATH; \
-	export PATH; \
-	tr -d '-' < $< \
-	  | munchlist -v -l ny${AFFIXES}.munch \
-	  | sed -e N -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
+# Note: Need to remove line count from munch output and re-insert later, since
+#       the following command may remove some lines
+nynorsk.mch: munch munch0.nynorsk nn_NO.aff.munch
+	./$^ 2> /dev/null | tail +2 \
+	  | sed -e N -e '/\(xxxx\|yyyy\)\// D' -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
 		-e '$$ p' -e '$$ d' -e P -e D | LANG=nn_NO sort \
 	  > $@ 
 
@@ -576,7 +592,7 @@ clean:
 	      $(addprefix ${LANGUAGE}.words.,${CATHEGORIES})\
 	      ${DICTIONARY} ny${DICTIONARY} n[bn]*.dic\
 	      ${AFFIXES} ny${AFFIXES} n[bn]*.aff\
-	      ${AFFIXES}.munch ny${AFFIXES}.munch \
+	      ${AFFIXES}.munch ny${AFFIXES} n[bn]*.aff.munch\
 	      *.comp[123].* munched.* core* munch
 
 #	The following target is used in the English makefile, and is
