@@ -247,7 +247,15 @@ norsk.hash nynorsk.hash: %.hash: %.mch %.aff ${BUILDHASH}
 norsk.aff nynorsk.aff: %.aff: %.aff.in
 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
 
-norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff
+norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
+	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
+	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
+	    -e 's/\(^flag  *\)~\(..\?:\)/\1\2/'  \
+	    -e 's/^\(compoundwords\) controlled z/\1 off/' $< \
+	 > $@
+	@echo -e '\n\nflag z: # Brukes for å bevare z-flagg gjennom munchlist\n    .              >       YYYY            # *HACK*' >> $@
+
+norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff.munch
 	echo 'QQQQQQQQ' > FAKEDICT
 	${BUILDHASH} -s FAKEDICT $< $@
 	rm -f FAKEDICT FAKEDICT.cnt FAKEDICT.stat
@@ -300,7 +308,7 @@ README_%.txt: README.myspell
 aspell:
 	install -d -m 775 $@
 
-aspell/%.dat: aspell-%.info.in
+aspell/%.dat: aspell
 	rm -f $@
 	sed -n -e 's/^lang/name/p' -e 's/^doc_encoding/charset/p' $^ > $@
 	echo "special \" -*- . -*-" >> $@
@@ -357,18 +365,19 @@ $(addprefix ${LANGUAGE}.words.,${CATHEGORIES}): ${LANGUAGE}.words.% : ${LANGUAGE
 # when the list is sorted.  Some redundant flags are also removed.
 # Isn't it amazing how much you can do with sed?
 
-# ispell's 'munchlist' does not work very well here. Among other things, it
-# will probably fail with a stack overflow on the B dictionary. We therefore
-# use the 'munch' utility from MySpell instead; its source code is expected to
-# be available on this directory
-
-munch0.%: ${LANGUAGE}.words.%
-	rm -f $@
-	wc -l < $< > $@
-	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
-
-$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff 
-	./$^ 2> /dev/null | tail +2 > $@
+# If we try to munch the whole B dictionary in one run, ispell will
+# probably dump core.  Nasty bug, and very silent
+# Munch one starting character at a time to avoid this
+munch1.%: ${LANGUAGE}.words.% ${AFFIXES}.munch ${LANGUAGE}.munch.hash 
+	cat /dev/null > $@
+	@PATH=$(PATHADDER):$$PATH; \
+	export PATH; \
+	for l in `echo ${CH} | sed "s/./& /g"`; do \
+	  echo "[$<, words '$$l.*'] | munchlist -l ${AFFIXES}.munch >> $@"; \
+	  egrep "^$$l" $< \
+	  | sed -e 's/ .*//' -e 's/-/î/g' -e 's/ \*//' \
+	  | munchlist -l ${AFFIXES}.munch >> $@ ; \
+	done
 
 munch2.%: munch1.%
 	perl expndflg.pl $< | sort  '-t/' -u +0f -1 +0 > $@
@@ -392,7 +401,7 @@ munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
 	cat $< \
 	  | tr -d ' ' \
 	  | ispell -e -d ./${LANGUAGE}.munch.hash \
-	  | sed -e 's/^[-${CH}]\+ //' \
+	  | sed -e 's/^[-${CH}]\+ //' -e 's/î/-/g' \
 	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
 	  | sort \
 	  | join - ${LANGUAGE}.words.$* \
