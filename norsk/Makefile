@@ -72,6 +72,18 @@ SUFF=${SUFFNORM}${SUFFCOMP}
 
 CATHEGORIES=B A N M S K D O C
 
+# Delete all suffix rules except the one we need to compile C code
+# included here, so that make won't try to do stupid things like
+# generate norsk.words based on norsk.words.<cathegory>
+
+.SUFFIXES:
+
+.SUFFIXES: .c
+
+
+
+
+
 # Configuration for the words file.
 
 # The words file is a plain text file containing words in alphabetical
@@ -328,6 +340,7 @@ $(foreach l, nb nn, aspell/aspell6-$l-$(ASPELL_VERSION).tar.bz2): aspell/aspell6
 $(foreach l, nb nn, aspell6-$l-$(ASPELL_VERSION).tar.bz2): % : aspell/%
 	cp -f $< $@
 
+
 # First of all, create a separate wordlist for each cathegory. It is sorted
 # exactly the same way as (other) generated data, as 'join' command will
 # otherwise work incorrectly.
@@ -557,8 +570,6 @@ words.${LANGUAGE}.%: $(addprefix ${LANGUAGE}.words.,B A N D S)
 	  | LANG=nb_NO sort -f \
 	  > $@
 
-
-unpack:	norsk.words
 
 clean:
 	rm -f core *.hash *.stat *.cnt munch[0123].* \
