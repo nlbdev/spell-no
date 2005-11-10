@@ -1,0 +1,19 @@
+name_english Norwegian Nynorsk
+lang nn
+version @VERSION@
+doc_encoding iso8859-1
+url http://www.uio.no/~runekl/dictionary.html
+author:
+  name  Rune Kleveland
+  email runekl at math uio no
+author:
+  name  Toralf Lund
+  email toralf at procaptura com
+copyright GPL
+source-version 2.0
+accurate true
+complete true
+alias nn nynorsk
+dict:
+  name nn
+  add nn
