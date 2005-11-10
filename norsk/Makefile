@@ -256,13 +256,6 @@ norsk.aff.null nynorsk.aff.null: %.aff.null: %.aff.in
 	sed -e '/^prefixes.*/,//d' $< > $@
 	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
 
-# *** Hack: Do tricks here to include some missing words...
-norsk.words: norsk.words.sq
-	PATH=$(PATHADDER):$$PATH; \
-	export PATH; \
-	unsq < norsk.words.sq | sed "s/^å .*/å * 31 B/" > norsk.words
-	echo "i * 31 B" >> norsk.words
-
 # MySpell support (6 Jun 2002, 26 Apr 2004 toralf@procaptura.com)
 # *** FIXME: Also generate "TRY" line
 # Note: Among other things, the conversion involves a change from upper-case
@@ -568,11 +561,12 @@ words.${LANGUAGE}.%: $(addprefix ${LANGUAGE}.words.,B A N D S)
 unpack:	norsk.words
 
 clean:
-	rm -f core *.hash *.stat *.cnt munch[123].* \
-	      ${DICTIONARY} ny${DICTIONARY} \
-	      ${AFFIXES} ny${AFFIXES} \
+	rm -f core *.hash *.stat *.cnt munch[0123].* \
+	      $(addprefix ${LANGUAGE}.words.,${CATHEGORIES})\
+	      ${DICTIONARY} ny${DICTIONARY} n[bn]*.dic\
+	      ${AFFIXES} ny${AFFIXES} n[bn]*.aff\
 	      ${AFFIXES}.munch ny${AFFIXES}.munch \
-	      *.comp[123].* *myspell* munched.* core*
+	      *.comp[123].* *myspell* munched.* core* munch
 
 #	The following target is used in the English makefile, and is
 #	required to be present in all other language Makefiles as
