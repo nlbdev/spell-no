@@ -566,7 +566,7 @@ clean:
 	      ${DICTIONARY} ny${DICTIONARY} n[bn]*.dic\
 	      ${AFFIXES} ny${AFFIXES} n[bn]*.aff\
 	      ${AFFIXES}.munch ny${AFFIXES}.munch \
-	      *.comp[123].* *myspell* munched.* core* munch
+	      *.comp[123].* munched.* core* munch
 
 #	The following target is used in the English makefile, and is
 #	required to be present in all other language Makefiles as
