@@ -1,7 +1,7 @@
 USER=toralfl
 SERVER=shell.sourceforge.net
 PROJECTDIR=/home/groups/s/sp/spell-no
-HTML=index.html
+HTML=index.html ooinstall.html
 
 # *** Is there a way to get scp to replace read-only files 
 #     (it has no -f option)?
