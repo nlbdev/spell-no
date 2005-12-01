@@ -259,6 +259,8 @@ norsk.hash nynorsk.hash: %.hash: %.mch %.aff ${BUILDHASH}
 norsk.aff nynorsk.aff: %.aff: %.aff.in
 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
 
+
+
 norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
 	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
 	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
@@ -387,7 +389,7 @@ munch0.%: ${LANGUAGE}.words.%
 	wc -l < $< > $@
 	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
 
-$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff.much
+$(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff.munch
 	./$^ 2> /dev/null | tail +2 > $@
 
 munch2.%: munch1.%
