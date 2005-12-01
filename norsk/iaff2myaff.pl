@@ -9,15 +9,18 @@ foreach $fileName (@ARGV) {
 	    ($id, $combine, $compound, @rewrite)=parseFlag(\*FILE, $line);
 	    
 	    if($compound) {
-		print STDERR ("Warning: Compound affix \"$typeId $id\"",
-			      " commented out in output.\n");
+		print STDERR ("Warning: Compund suffix \"$typeId $id\"",
+			      " may be incorrect in output.\n");
 		
-		print("\n# *** FIXME: The following rule set is applicable\n");
-		print("#            to compounds only:\n");
-		print("# ", $typeId, " ", $id, " ", ($combine?"Y":"N"), " ",
+		print("\n# *** FIXME: The following rule set is applicable only when\n");
+		print("#            forming compunds. Not sure if the syntax is correct\n");
+		print($typeId, " ", $id, " ", ($combine?"Y":"N"), " ",
 		      $#rewrite+1, "\n");
 		foreach $r (@rewrite) {
-		    print("# ", $typeId, " ", $id, "   ", $r, "\n");
+		    $r=~s/\S*\s*\S*/$&-/; # Insert '-' after 2nd char sequence
+		    $r=~s/0-/-/;
+		    
+		    print($typeId, " ", $id, "   ", $r, "\n");
 		}
 	    } else {
 		if($#rewrite<0) {
