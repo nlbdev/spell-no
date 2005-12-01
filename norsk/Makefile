@@ -260,14 +260,14 @@ norsk.aff nynorsk.aff: %.aff: %.aff.in
 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
 
 
-
-norsk.aff.munch nynorsk.aff.munch: %.aff.munch: %.aff.in
-	sed -e 's/\(.*> *[-,${UCH}]*\)    \( *#~.*$$\)/\1XXXX\2 *HACK*/' \
-	    -e 's/-ZYZYZY,-\( *#-.*$$\)/-ZYZYZY,ZYZYZY\1/' \
-	    -e 's/\(^flag  *\)~\(..\?:\)/\1\2/'  \
-	    -e 's/^\(compoundwords\) controlled z/\1 off/' $< \
-	 > $@
-	@echo -e '\n\nflag z: # Brukes for å bevare z-flagg gjennom munchlist\n    .              >       YYYY            # *HACK*' >> $@
+# Special affix rules to use during the munch phase. These handle the fact that
+# the input word list has <root>yyyy or <root><suffix>xxxx or <root>zyzyzy for
+# roots that may be used when forming compounds.
+nb_NO.aff.munch nn_NO.aff.munch: %.aff.munch: %.aff
+	sed -e 's/\(SFX.*\)-/\1xxxx/' -e 's/zyzyzy  xxxx/zyzyzy  zyzyzy/' -e 's/^COMPOUND.*//' $< > $@
+	@echo >> $@
+	echo 'SFX z N 3 # Get munch to insert z-flag (compound marker)' >> $@
+	echo 'SFX z   0 yyyy  .' >> $@
 
 norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff
 	echo 'QQQQQQQQ' > FAKEDICT
@@ -294,12 +294,6 @@ nb_NO.aff: norsk.aff
 	$(ISPELL2MYAFF)
 
 nn_NO.aff: nynorsk.aff
-	$(ISPELL2MYAFF)
-
-nb_NO.aff.munch: norsk.aff.munch
-	$(ISPELL2MYAFF)
-
-nn_NO.aff.munch: nynorsk.aff.munch
 	$(ISPELL2MYAFF)
 
 # Note: mch.cnt is secondary output from buildhash
