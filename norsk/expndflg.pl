@@ -22,33 +22,25 @@ foreach $fileName (@ARGV) {
 	
 	$flags=~s/^(.*[AB]|)E/$1/ if($nextLine=~m/^${word}er\/AI/);
 	
-	if(!$flags) {
-	    # Note: Old sed scripts would print an extra ' ' after '/' in this
-	    #       case; this may or may not be necessary
-	    print($word, "/");
-	    print("`") if($word=~m/zyzyzy$/);
-	    print(" \n");
-	} else {
-	    print($word, "/\n");
+	print($word, "/\n");
 	    
-	    # Note: The below 'm' operator will return a list of letters
-	    #       in $flags, since a list if every possible match is returned
-	    #       when using 'g' flag, and '.' matches any single character.
-	    foreach $flag (($flags=~m/./g)) {
-		print($word, "/");
-		
-		if(!($flag=~m/[a-s]/g)) {
-		    foreach $prefix (($flags=~m/[a-s]/g)) {
-			print($prefix);
+	# Note: The below 'm' operator will return a list of letters
+	#       in $flags, since a list if every possible match is returned
+	#       when using 'g' flag, and '.' matches any single character.
+	foreach $flag (($flags=~m/./g)) {
+	    print($word, "/");
+	    
+	    if(!($flag=~m/[a-s]/g)) {
+		foreach $prefix (($flags=~m/[a-s]/g)) {
+		    print($prefix);
 		    }
-		}
-		print($flag, "\n");
 	    }
+	    print($flag, "\n");
+	}
 
-	    if($flags=~m/[A-Zt-z]/ && !($word=~m/(re|er)$/)) {
-		$nextLine=~s/(${word}e\/.*)R/$1/;
-		$nextLine=~s/\/$//; # Remove separator if no flags are left
-	    }
+	if($flags=~m/[A-Zt-z]/ && !($word=~m/(re|er)$/)) {
+	    $nextLine=~s/(${word}e\/.*)R/$1/;
+	    $nextLine=~s/\/$//; # Remove separator if no flags are left
 	}
 	
         $line=$nextLine;
