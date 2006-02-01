@@ -1,8 +1,8 @@
 # Makefile for the Norwegian dictionary for Ispell v. 2.0
 # Copyright (C) 2000, Rune Kleveland
 #
-# Maintainer: Rune Kleveland
-# Email : runekl@math.uio.no
+# Maintainer: Toralf Lund
+# Email : toralf - at - procaptura - dot - com
 # License : GPL
 
 SHELL = /bin/sh
@@ -218,7 +218,7 @@ CHOOSEROOTC=${DEFAULTROOTFILTER} # Sammendragning
 
 
 
-all: norsk.hash nynorsk.hash
+all: $(HASHFILE) nynorsk.hash
 
 myspell: nb_NO.aff nb_NO.dic nn_NO.aff nn_NO.dic 
 
@@ -251,7 +251,7 @@ install-scripts:  inorsk-compwordsmaybe inorsk-hyphenmaybe $(CONFIG)
 	  set -x; \
 	  $$INSTALL inorsk-compwordsmaybe inorsk-hyphenmaybe $$BINDIR
 
-norsk.hash nynorsk.hash: %.hash: %.mch %.aff
+$(HASHFILE) nynorsk.hash: %.hash: %.mch %.aff
 	rm -f $@
 	$(BUILDHASH) $< $(subst .hash,.aff,$@) $@
 
@@ -295,7 +295,7 @@ nb_NO.aff: norsk.aff
 nn_NO.aff: nynorsk.aff
 	$(ISPELL2MYAFF)
 
-nb_NO.dic: norsk.mch
+nb_NO.dic: $(DICTIONARY)
 	cat $< | wc -w > $@
 	cat $< >> $@
 
@@ -324,7 +324,7 @@ aspell/Copyright: README.myspell aspell
 	cp -f $< $@
 	chmod +w $@
 
-aspell/nb.wl: norsk.mch aspell
+aspell/nb.wl: $(DICTIONARY) aspell
 	cp -f $< $@
 
 aspell/nn.wl: nynorsk.mch aspell
@@ -471,8 +471,10 @@ munched.%: munch2.% munch3.%
 # compoundwords mode.
 
 # *All* words, with line numbers
+# Note: cat -n <file list> will number files individually (at least on some
+#       platforms), so have a seprate cat to "collect files" first.
 %.all: forkort.txt $(addprefix munched.,${CATHEGORIES})
-	cat -n $^ > $@
+	cat $^ | cat -n > $@
 
 # All words with some compound flag, i.e. presumably all words except the
 # compunds. (Note that line numbers and frequency indicators are removed here.)
@@ -509,22 +511,22 @@ munched.%: munch2.% munch3.%
 	  > $@
 
 # Combine numbers of lines to remove (see above) with numbered word list,
-# using a "merge sort" on numbers with removal of duplicates. If the number
-# in a line from the word matches a number in the removal list, the wordlist
+# using a "merge sort" on numbers with removal of duplicates. If a line number
+# in the wordlist matches a number in the removal list, the wordlist
 # entry is consedered a duplicate and removed. The removal number will remain,
 # but we then remove all lines containing a number only - along with words
 # containing xxxx and yyyy.  Those words didn't fit in in the munching,
 # and since it is few words I don't want to fiddle with them.
 
-norsk.mch: %.mch : %.rm %.all
+$(DICTIONARY): %.mch : %.rm %.all
 	@echo "Removing `cat $< | wc -l` compound root words"
 	sort -n -m -s +0 -1 -u $< $*.all \
-	  | perl -p -e 's/^[0-9]\+\n//m; s/^.*(xxxx\|yyyy)\/.*\n//m; tr /- 	0-9//d' | LANG=nb_NO sort -u > $@
+	  | perl -p -e 's/^[0-9]+\n//; s/^.*(xxxx|yyyy)\/.*\n//; tr /- 	0-9//d' | LANG=nb_NO sort > $@
 
 
 # Keep some of the  intermediate files from the above process to make
 # debugging easier, and because some of the steps take a LONG time
-.PRECIOUS: munch1.% munch2.% munch3.% %.comp1.mch %.comp2.mch %.comp3.mch
+.PRECIOUS: munch1.% munch2.% munch3.% %.comp %.root
 
 
 
