@@ -470,36 +470,37 @@ munched.%: munch2.% munch3.%
 # frequency indicator less than COMPOUNDLIMIT accepted in controlled
 # compoundwords mode.
 
-%.comp1.mch: %.aff forkort.txt $(addprefix munched.,${CATHEGORIES})
-# First make a list of words with some compound flag, and a hash-file.
-	cat $(filter-out %.aff,$^) \
-	  | tr -d '\-0-9 ' \
-	  | grep "\/.*[z\\_\`]" \
-	  > $@
+# *All* words, with line numbers
+%.all: forkort.txt $(addprefix munched.,${CATHEGORIES})
+	cat -n $^ > $@
 
-%.comp.hash: %.comp1.mch
+# All words with some compound flag, i.e. presumably all words except the
+# compunds. (Note that line numbers and frequency indicators are removed here.)
+%.root: %.aff %.all
+	grep "\/.*[z\\_\`]" $*.all | tr -d '\- 	0-9' > $@
+
+# Hash file for the above
+%.root.hash: %.root
 	$(BUILDHASH) $< $(AFFIXES) $@
 
-# Make a list of candidates to be removed.  Exclude all words with
-# compound flags and those with frequency indicator bigger than
+# Candiates for removal: Compounds with freqency indicator smaller than
 # COMPOUNDLIMIT.  This could be improved.  One could insist that the
 # words forming a word that should be deleted are separated by a
 # hyphen at the correct point.  That would complicate things.
-%.comp2.mch: %.aff forkort.txt $(addprefix munched.,${CATHEGORIES})
-	cat -n $(filter-out %.aff,$^) \
-	  | grep -v "\/.*[z\\_\`]" \
+%.comp: %.aff %.all
+	grep -v "\/.*[z\\_\`]" $*.all\
 	  | awk --source '/-/ {if ($$3<${COMPOUNDLIMIT}) {print $$1,$$2,$$3}}' \
 	  > $@
 
-# Test which words are accepted by ispell.  Output is a list of line
-# numbers indicating the lines that can be removed from the munched
-# file.
-%.comp3.mch: %.comp2.mch %.comp.hash
+# Test which of the above words are accepted by ispell, when its dictionary
+# contains only words that are not compounds. Output line numbers only -
+# indicating the lines that may be removed from the munched file.
+%.rm: %.comp %.root.hash
 	cat $< \
 	  | tr -d '\-0-9 ' \
-	  | $(ISPELL) -e -d ./$*.comp.hash \
+	  | $(ISPELL) -e -d ./$*.root.hash \
 	  | sed -e 's/$$/ xyxyxyxy/' \
-	  | $(ISPELL) -l -d ./$*.comp.hash \
+	  | $(ISPELL) -l -d ./$*.root.hash \
 	  | sed -e 's/xyxyxyxy/î/' \
 	  | tr '\nî' ' \n' \
 	  | paste $< - \
@@ -507,18 +508,17 @@ munched.%: munch2.% munch3.%
 	  | sed -e 's/ .*//' \
 	  > $@
 
-# Combine numbers of lines to remove (see above) with numbered words lines 
-# (from cat -n), using a "merge sort" on numbers only with removal of
-# duplicates. Whenever a "removal line" and a line from cat -n with the same
-# number is encountered, the latter is considered a duplicate, so only the
-# plain line number remains. Then remove such numbers, and also all words
+# Combine numbers of lines to remove (see above) with numbered word list,
+# using a "merge sort" on numbers with removal of duplicates. If the number
+# in a line from the word matches a number in the removal list, the wordlist
+# entry is consedered a duplicate and removed. The removal number will remain,
+# but we then remove all lines containing a number only - along with words
 # containing xxxx and yyyy.  Those words didn't fit in in the munching,
 # and since it is few words I don't want to fiddle with them.
 
-norsk.mch: %.mch : %.comp3.mch forkort.txt $(addprefix munched.,${CATHEGORIES})
+norsk.mch: %.mch : %.rm %.all
 	@echo "Removing `cat $< | wc -l` compound root words"
-	cat -n $(filter-out %.mch,$^) \
-	  | sort -n -m -s +0 -1 -u $< - \
+	sort -n -m -s +0 -1 -u $< $*.all \
 	  | perl -p -e 's/^[0-9]\+\n//m; s/^.*(xxxx\|yyyy)\/.*\n//m; tr /- 	0-9//d' | LANG=nb_NO sort -u > $@
 
 
