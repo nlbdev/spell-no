@@ -295,14 +295,13 @@ nb_NO.aff: norsk.aff
 nn_NO.aff: nynorsk.aff
 	$(ISPELL2MYAFF)
 
-# Note: mch.cnt is secondary output from buildhash
-norsk.mch.cnt nynorsk.mch.cnt: %.mch.cnt: %.hash
+nb_NO.dic: norsk.mch
+	cat $< | wc -w > $@
+	cat $< >> $@
 
-nb_NO.dic: norsk.mch.cnt norsk.mch
-	cat $^ > $@
-
-nn_NO.dic: nynorsk.mch.cnt nynorsk.mch
-	cat $^ > $@
+nn_NO.dic: nynorsk.mch
+	cat $< | wc -w > $@
+	cat $< >> $@
 
 README_%.txt: README.myspell
 	cp $< $@
@@ -507,16 +506,20 @@ munched.%: munch2.% munch3.%
 	  | grep '	 $$' \
 	  | sed -e 's/ .*//' \
 	  > $@
-# Remove all the line numbers that is found twice, and all words
+
+# Combine numbers of lines to remove (see above) with numbered words lines 
+# (from cat -n), using a "merge sort" on numbers only with removal of
+# duplicates. Whenever a "removal line" and a line from cat -n with the same
+# number is encountered, the latter is considered a duplicate, so only the
+# plain line number remains. Then remove such numbers, and also all words
 # containing xxxx and yyyy.  Those words didn't fit in in the munching,
 # and since it is few words I don't want to fiddle with them.
 
 norsk.mch: %.mch : %.comp3.mch forkort.txt $(addprefix munched.,${CATHEGORIES})
-	@echo Removing `cat $< | wc -l` compound root words
+	@echo "Removing `cat $< | wc -l` compound root words"
 	cat -n $(filter-out %.mch,$^) \
-	  | sort -n -m -s +0 -1 $< - \
-	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
-	  | tr -d '\- 	0-9' | LANG=nb_NO sort -u > $@
+	  | sort -n -m -s +0 -1 -u $< - \
+	  | perl -p -e 's/^[0-9]\+\n//m; s/^.*(xxxx\|yyyy)\/.*\n//m; tr /- 	0-9//d' | LANG=nb_NO sort -u > $@
 
 
 # Keep some of the  intermediate files from the above process to make
