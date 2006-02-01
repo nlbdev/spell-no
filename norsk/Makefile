@@ -6,11 +6,10 @@
 # License : GPL
 
 SHELL = /bin/sh
-MAKE = make
 ISPELLDIST=../..
 CONFIG		=	$(ISPELLDIST)/config.sh
-PATHADDER	=	$(ISPELLDIST)
-BUILDHASH	=	$(ISPELLDIST)/buildhash
+ISPELL		=	PATH=$(ISPELLDIST):${PATH} ispell
+BUILDHASH	=	PATH=$(ISPELLDIST):${PATH} buildhash
 
 # The following variables make it easy to adapt this Makefile to
 # numerous languages.
@@ -252,9 +251,9 @@ install-scripts:  inorsk-compwordsmaybe inorsk-hyphenmaybe $(CONFIG)
 	  set -x; \
 	  $$INSTALL inorsk-compwordsmaybe inorsk-hyphenmaybe $$BINDIR
 
-norsk.hash nynorsk.hash: %.hash: %.mch %.aff ${BUILDHASH}
+norsk.hash nynorsk.hash: %.hash: %.mch %.aff
 	rm -f $@
-	${BUILDHASH} $< $(subst .hash,.aff,$@) $@
+	$(BUILDHASH) $< $(subst .hash,.aff,$@) $@
 
 norsk.aff nynorsk.aff: %.aff: %.aff.in
 	sed -e 's/stringchar *î *Î//' -e 's/[îÎ]//g' $< > $@
@@ -397,17 +396,18 @@ munch2.%: munch1.%
 #     <ord>/ak ekspanderes til <ord>/a og <ord>/k, men *kanskje* er det riktig
 #     å beholde <ord>/ak
 
+tst:
+	echo hei;\
+	echo hopp
 
 munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
 # This pipe produce a file containing the a line number of munch2 and
 # the frequency indicator for that line.  Note that the summation rule
 # is not the usual one.
-	@echo "cat $< | [ Get line no and frequency ] > $@"; \
-	PATH=$(PATHADDER):$$PATH; \
-	export PATH; \
+	@echo "Write frequency info for $< to $@";\
 	cat $< \
 	  | tr -d ' ' \
-	  | ispell -e -d ./${LANGUAGE}.munch.hash \
+	  | $(ISPELL) -e -d ./${LANGUAGE}.munch.hash \
 	  | sed -e 's/^[-${CH}]\+ //' \
 	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
 	  | sort \
@@ -496,13 +496,11 @@ munched.%: munch2.% munch3.%
 # numbers indicating the lines that can be removed from the munched
 # file.
 %.comp3.mch: %.comp2.mch %.comp.hash
-	PATH=$(PATHADDER):$$PATH; \
-	export PATH; \
 	cat $< \
 	  | tr -d '\-0-9 ' \
-	  | ispell -e -d ./$*.comp.hash \
+	  | $(ISPELL) -e -d ./$*.comp.hash \
 	  | sed -e 's/$$/ xyxyxyxy/' \
-	  | ispell -l -d ./$*.comp.hash \
+	  | $(ISPELL) -l -d ./$*.comp.hash \
 	  | sed -e 's/xyxyxyxy/î/' \
 	  | tr '\nî' ' \n' \
 	  | paste $< - \
@@ -518,7 +516,7 @@ norsk.mch: %.mch : %.comp3.mch forkort.txt $(addprefix munched.,${CATHEGORIES})
 	cat -n $(filter-out %.mch,$^) \
 	  | sort -n -m -s +0 -1 $< - \
 	  | sed -e '/^[0-9]\+$$/,/.*/ D' -e '/\(xxxx\|yyyy\)\// D' \
-	  | tr -d '\- 	0-9' | LANG=nb_NO sort > $@
+	  | tr -d '\- 	0-9' | LANG=nb_NO sort -u > $@
 
 
 # Keep some of the  intermediate files from the above process to make
