@@ -445,10 +445,6 @@ munched.%: munch2.% munch3.%
 	     if($$w ne $$p) { print("$${freq}\n") if($$p); print($$w, "/"); $$p=$$w; undef $$pre; undef $$freq};\
 	     $$f=~s/[$$pre]//g if($$pre); $$pre.=($$f=~m/([${PRE}]+)/)[0]; print("$$f"); $$freq="$${freq} $$n"};\
 	     print("$${freq}\n");' \
-	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
-	  | tr '*' '\n' \
-	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
-	  | sed -e N -e 's/\n//' \
 	  | awk --source '\
 		{i = 1;\
 		s = 0;\
