@@ -218,7 +218,7 @@ CHOOSEROOTC=${DEFAULTROOTFILTER} # Sammendragning
 
 
 
-all: $(HASHFILE) nynorsk.hash
+all: $(HASHFILE) nynorsk.hash myspell
 
 myspell: nb_NO.aff nb_NO.dic nn_NO.aff nn_NO.dic 
 
@@ -296,11 +296,11 @@ nn_NO.aff: nynorsk.aff
 	$(ISPELL2MYAFF)
 
 nb_NO.dic: $(DICTIONARY)
-	cat $< | wc -w > $@
+	wc -l < $< > $@
 	cat $< >> $@
 
 nn_NO.dic: nynorsk.mch
-	cat $< | wc -w > $@
+	wc -l < $< > $@
 	cat $< >> $@
 
 README_%.txt: README.myspell
@@ -395,20 +395,17 @@ munch2.%: munch1.%
 #     <ord>/ak ekspanderes til <ord>/a og <ord>/k, men *kanskje* er det riktig
 #     å beholde <ord>/ak
 
-tst:
-	echo hei;\
-	echo hopp
 
 munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
 # This pipe produce a file containing the a line number of munch2 and
 # the frequency indicator for that line.  Note that the summation rule
 # is not the usual one.
-	@echo "Write frequency info for $< to $@";\
+	echo "Write frequency info for $< to $@";\
 	cat $< \
 	  | tr -d ' ' \
 	  | $(ISPELL) -e -d ./${LANGUAGE}.munch.hash \
 	  | sed -e 's/^[-${CH}]\+ //' \
-	  | awk --source '{i=0; while (i<NF) {i=i+1;print $$i,NR}}' \
+	  | perl -e '$$n=1; while(<>) { chop($$_); foreach $$w (split/ /, $$_) { print "$$w $$n\n" } $$n++ }' \
 	  | sort \
 	  | join - ${LANGUAGE}.words.$* \
 	  | sed -e 's/\* //' \
@@ -424,8 +421,7 @@ munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
 		{i=i+1;\
 		if ($$i<5) {s=s+$$i} else {s = s + exp(exp(($$i+9)/15)-1)}}};\
 		if (s<=5) {t=s} else {t=-9+15*log(1+log(s))};\
-		print $$1, int(t)}' \
-	  > $@
+		print $$1, int(t)}' > $@
 
 munched.%: munch2.% munch3.%
 # This pipe produces the file containing the munched list of words,
@@ -443,12 +439,12 @@ munched.%: munch2.% munch3.%
 	  | cut -d ' ' -f2,3 \
 	  | awk --re-interval --source ${CHOOSEFLAG$*} \
 	  | uniq \
-	  | tr -d ' ' \
 	  | perl -e 'while(<>) { chop($$_); \
 	     ($$w, $$f)=split("/", $$_); \
-	     if($$w ne $$p) { print("\n") if($$p); print($$w, "/"); $$p=$$w; undef $$pre; };\
-	     $$f=~s/[$$pre]//g if($$pre); $$pre.=($$f=~m/([${PRE}]+)/)[0]; print("$$f"); };\
-	     print("\n");' \
+	     ($$f, $$n)=split(/ /, $$f); \
+	     if($$w ne $$p) { print("$${freq}\n") if($$p); print($$w, "/"); $$p=$$w; undef $$pre; undef $$freq};\
+	     $$f=~s/[$$pre]//g if($$pre); $$pre.=($$f=~m/([${PRE}]+)/)[0]; print("$$f"); $$freq="$${freq} $$n"};\
+	     print("$${freq}\n");' \
 	  | sed -e 's/\/\([${SUFF}0-9${PRE}]*\)/\/\1\* \1/' \
 	  | tr '*' '\n' \
 	  | sed -e '/ .*/ s/[^0-9 ]\+/ /g' \
@@ -521,7 +517,7 @@ munched.%: munch2.% munch3.%
 $(DICTIONARY): %.mch : %.rm %.all
 	@echo "Removing `cat $< | wc -l` compound root words"
 	sort -n -m -s +0 -1 -u $< $*.all \
-	  | perl -p -e 's/^[0-9]+\n//; s/^.*(xxxx|yyyy)\/.*\n//; tr /- 	0-9//d' | LANG=nb_NO sort > $@
+	  | perl -p -e 's/^[0-9]*\n//; s/^.*(xxxx|yyyy)\/.*\n//; tr /- 	0-9//d' | LANG=nb_NO sort > $@
 
 
 # Keep some of the  intermediate files from the above process to make
