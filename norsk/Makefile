@@ -268,11 +268,6 @@ nb_NO.aff.munch nn_NO.aff.munch: %.aff.munch: %.aff
 	echo 'SFX z N 3 # Get munch to insert z-flag (compound marker)' >> $@
 	echo 'SFX z   0 yyyy  .' >> $@
 
-norsk.munch.hash nynorsk.munch.hash: %.munch.hash: %.aff
-	echo 'QQQQQQQQ' > FAKEDICT
-	${BUILDHASH} -s FAKEDICT $< $@
-	rm -f FAKEDICT FAKEDICT.cnt FAKEDICT.stat
-
 norsk.aff.null nynorsk.aff.null: %.aff.null: %.aff.in
 	sed -e '/^prefixes.*/,//d' $< > $@
 	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
@@ -396,14 +391,12 @@ munch2.%: munch1.%
 #     å beholde <ord>/ak
 
 
-munch3.%: munch2.% ${LANGUAGE}.words.% ${LANGUAGE}.munch.hash
+munch3.%: unmunch munch2.% nb_NO.aff.munch ${LANGUAGE}.words.%
 # This pipe produce a file containing the a line number of munch2 and
 # the frequency indicator for that line.  Note that the summation rule
 # is not the usual one.
 	echo "Write frequency info for $< to $@";\
-	cat $< \
-	  | tr -d ' ' \
-	  | $(ISPELL) -e -d ./${LANGUAGE}.munch.hash \
+	./$< munch2.$* nb_NO.aff.munch 2> /dev/null \
 	  | sed -e 's/^[-${CH}]\+ //' \
 	  | perl -e '$$n=1; while(<>) { chop($$_); foreach $$w (split/ /, $$_) { print "$$w $$n\n" } $$n++ }' \
 	  | sort \
