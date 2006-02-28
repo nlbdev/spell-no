@@ -71,7 +71,11 @@ int main(int argc, char** argv)
   /* affix file is now parsed so create hash table of wordlist on the fly */
 
   /* open the wordlist */
-  wrdlst = fopen(wf,"r");
+  /* Another toralf-hack: If filename is "-", open standard input */
+  if(strcmp(wf, "-")==0)
+    wrdlst = fdopen(dup(STDIN_FILENO), "r");
+  else 
+    wrdlst = fopen(wf,"r");
   if (!wrdlst) {
     fprintf(stderr,"Error - could not open word list file\n");
     exit(1);
