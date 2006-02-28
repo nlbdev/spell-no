@@ -395,7 +395,7 @@ munch3.%: unmunch munch2.% nb_NO.aff.munch ${LANGUAGE}.words.%
 # This pipe produce a file containing the a line number of munch2 and
 # the frequency indicator for that line.  Note that the summation rule
 # is not the usual one.
-	echo "Write frequency info for $< to $@";\
+	echo "Write frequency info for munch2.$* to $@";\
 	./$< munch2.$* nb_NO.aff.munch 2> /dev/null \
 	  | sed -e 's/^[-${CH}]\+ //' \
 	  | perl -e '$$n=1; while(<>) { chop($$_); foreach $$w (split/ /, $$_) { print "$$w $$n\n" } $$n++ }' \
@@ -482,10 +482,10 @@ munched.%: munch2.% munch3.%
 # Test which of the above words are accepted by ispell, when its dictionary
 # contains only words that are not compounds. Output line numbers only -
 # indicating the lines that may be removed from the munched file.
-%.rm: %.comp %.root.hash
+%.rm: %.comp unmunch nb_NO.aff %.root.hash
 	cat $< \
 	  | tr -d '\-0-9 ' \
-	  | $(ISPELL) -e -d ./$*.root.hash \
+	  | unmunch - nb_NO.aff 2>/dev/null \
 	  | sed -e 's/$$/ xyxyxyxy/' \
 	  | $(ISPELL) -l -d ./$*.root.hash \
 	  | sed -e 's/xyxyxyxy/î/' \
