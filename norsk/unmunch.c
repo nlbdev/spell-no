@@ -80,7 +80,13 @@ int main(int argc, char** argv)
   /* skip over the hash table size */
   if (! fgets(ts, MAX_LN_LEN-1,wrdlst)) return 2;
   mychomp(ts);
-
+  
+  /* Modification by toralf: Also support files that don't have word count
+     on first line; go back to start if it looks like the line just read
+     doesn't contain a number after all */
+  if(atoi(ts)==0) 
+    rewind(wrdlst);
+  
   while (fgets(ts,MAX_LN_LEN-1,wrdlst)) {
     mychomp(ts);
     /* split each line into word and affix char strings */
@@ -104,13 +110,17 @@ int main(int argc, char** argv)
     if (al)
        expand_rootword(ts,wl,ap,al);
   
+    /* **** Modification by toralf: Use ' ' instead of '\n' as separator for
+            words expanded from the same root + affix - like 'ispell -e' */
     for (i=0; i < numwords; i++) {
-      fprintf(stdout,"%s\n",wlist[i].word);
+      fprintf(stdout,"%s",wlist[i].word);
       free(wlist[i].word);
       wlist[i].word = NULL;
       wlist[i].pallow = 0;
+      if(i<numwords-1)
+	fprintf(stdout," ");
     }
-
+    fprintf(stdout,"\n");
   }
 
   fclose(wrdlst);
