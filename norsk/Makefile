@@ -475,25 +475,32 @@ munched.%: munch2.% munch3.%
 # words forming a word that should be deleted are separated by a
 # hyphen at the correct point.  That would complicate things.
 %.comp: %.aff %.all
-	grep -v "\/.*[z\\_\`]" $*.all\
-	  | awk --source '/-/ {if ($$3<${COMPOUNDLIMIT}) {print $$1,$$2,$$3}}' \
-	  > $@
+	perl -n -e 's/^\s*//; print $$_ if(m/-/ && !m/\/.*[z\_\`]/ && (split())[2]<${COMPOUNDLIMIT})' $*.all > $@
 
-# Test which of the above words are accepted by ispell, when its dictionary
-# contains only words that are not compounds. Output line numbers only -
-# indicating the lines that may be removed from the munched file.
-%.rm: %.comp unmunch nb_NO.aff %.root.hash
+
+# Test which of the above words are accepted by ispell when using a dictionary
+# containing all words from the orignal list *except* the compounds.
+# Pass lines of affix-expanded compounds to ispell -l; this will print words
+# that are _NOT_ spelled correctly according to the above mentioned dictionary,
+# in the original sequence and separated by newline. Use a special end-of-line
+# marker (must *not* be a valid word - "EOL" is used in this case) to allow
+# these words top be assembled back into the orignal line organisation.
+# Output is line numbers of lines where all the words were accepted, i.e. that
+# are empty after the assembly, so they give only whitespace before numbers
+# when pasting with original input starting with line no - use match operator
+# in perl to print (only) these line numbers.
+# *** Match operator is set up so that output list also contains trailing
+#     line not for lines that match. Somewhat ugly.
+
+%.rm: %.comp unmunch nb_NO.bgaff %.root.hash
 	cat $< \
 	  | tr -d '\-0-9 ' \
 	  | unmunch - nb_NO.aff 2>/dev/null \
-	  | sed -e 's/$$/ xyxyxyxy/' \
+	  | perl -p -e 's/$$/ -EOL-/' \
 	  | $(ISPELL) -l -d ./$*.root.hash \
-	  | sed -e 's/xyxyxyxy/î/' \
-	  | tr '\nî' ' \n' \
-	  | paste $< - \
-	  | grep '	 $$' \
-	  | sed -e 's/ .*//' \
-	  > $@
+	  | perl -p -e 's/\n/ /; s/EOL /\n/' \
+	  | paste - $<\
+	  | perl -n -e 'print (m/^\s*([0-9]+).*(\n)/)' > $@
 
 # Combine numbers of lines to remove (see above) with numbered word list,
 # using a "merge sort" on numbers with removal of duplicates. If a line number
