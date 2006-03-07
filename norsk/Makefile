@@ -260,17 +260,17 @@ norsk.aff nynorsk.aff: %.aff: %.aff.in
 
 
 # Special affix rules to use during the munch phase. These handle the fact that
-# the input word list has <root>yyyy or <root><suffix>xxxx or <root>zyzyzy for
+# the input word list has <root>-xxxx or <root><suffix>-xxxx for
 # roots that may be used when forming compounds.
 nb_NO.aff.munch nn_NO.aff.munch: %.aff.munch: %.aff
-	sed -e 's/\(SFX.*\)-/\1xxxx/' -e 's/zyzyzy  xxxx/zyzyzy  zyzyzy/' -e 's/^COMPOUND.*//' $< > $@
+	sed -e 's/\(SFX.*\)-/\1-xxxx/' -e 's/\([^-]\)xxxx/\1-xxxx/g' -e 's/^COMPOUND.*//' $< > $@
 	@echo >> $@
-	echo 'SFX z N 3 # Get munch to insert z-flag (compound marker)' >> $@
-	echo 'SFX z   0 yyyy  .' >> $@
+	echo 'SFX z N 1 # Get munch to insert z-flag (compound marker)' >> $@
+	echo 'SFX z   0 -xxxx  .' >> $@
 
 norsk.aff.null nynorsk.aff.null: %.aff.null: %.aff.in
 	sed -e '/^prefixes.*/,//d' $< > $@
-	echo -e 'suffixes\nflag *z:\nY Y Y Y Y   >   YYYYYY' >> $@
+	echo -e 'suffixes\nflag *z:\nX X X X X  >   XXXXX' >> $@
 
 # MySpell support (6 Jun 2002, 26 Apr 2004 toralf@procaptura.com)
 # *** FIXME: Also generate "TRY" line
@@ -492,7 +492,7 @@ munched.%: munch2.% munch3.%
 # *** Match operator is set up so that output list also contains trailing
 #     line not for lines that match. Somewhat ugly.
 
-%.rm: %.comp unmunch nb_NO.bgaff %.root.hash
+%.rm: %.comp unmunch nb_NO.aff %.root.hash
 	cat $< \
 	  | tr -d '\-0-9 ' \
 	  | unmunch - nb_NO.aff 2>/dev/null \

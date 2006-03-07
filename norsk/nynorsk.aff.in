@@ -755,13 +755,13 @@ flag ~\_:      # endelse: -ings
     [^G] E L       >       E               #~ sjel   > sjele-
     [^E] L         >       E               #~ fugl   > fugle-
 
-# ZYZYZY er et hack for å støtte ord som kun er tilatt i sammensetninger.
+# XXXX er et hack for å støtte ord som kun er tilatt i sammensetninger.
 # For eksempel skal Oslo skrives med stor bokstav, men oslokvinne er lovlig.
-# En feature er at oslozyzyzy blir lovlig...
+# En feature er at osloxxxx blir lovlig...
 
 flag ~\`:
     E              >       -E,NINGS        #~ avskrive > avskrivnings-
-    Z Y Z Y Z Y    >       -ZYZYZY,-       #- flerezyzyzy > fler-
+    Z Y Z Y Z Y    >       -XXXX,-	   #- flerexxxx > flere-
 
 # Ikke behandlet er avledningsendelser som: -dom, -sjon, -ig, -isk.
 # Fjerne alle flagg som genererer et annet basisord. (ert -> erts)
