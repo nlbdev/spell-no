@@ -505,15 +505,16 @@ munched.%: munch2.% munch3.%
 # Combine numbers of lines to remove (see above) with numbered word list,
 # using a "merge sort" on numbers with removal of duplicates. If a line number
 # in the wordlist matches a number in the removal list, the wordlist
-# entry is consedered a duplicate and removed. The removal number will remain,
-# but we then remove all lines containing a number only - along with words
-# containing xxxx and yyyy.  Those words didn't fit in in the munching,
-# and since it is few words I don't want to fiddle with them.
+# entry is considered a duplicate and removed. The removal number will remain,
+# but we then remove all lines containing a number only.
+# *** TODO: There will be some "compound" entries that didn't fit in in
+#           the munching, i.e. that end with xxxx and have no flag that may
+#           remove this string; should handle those somehow.
 
 $(DICTIONARY): %.mch : %.rm %.all
 	@echo "Removing `cat $< | wc -l` compound root words"
 	sort -n -m -s +0 -1 -u $< $*.all \
-	  | perl -p -e 's/^[0-9]*\n//; s/^.*(xxxx|yyyy)\/.*\n//; tr /- 	0-9//d' | LANG=nb_NO sort > $@
+	  | perl -p -e 's/^[0-9]*\n//; tr /- 	0-9//d' | LANG=nb_NO sort > $@
 
 
 # Keep some of the  intermediate files from the above process to make
@@ -535,15 +536,13 @@ $(DICTIONARY): %.mch : %.rm %.all
 munch0.nynorsk: words.nynorsk
 	rm -f $@
 	wc -l < $< > $@
-	tr -d '-' < $< | sed -e 's/ .*//' -e 's/ \*//' >> $@
+	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
 
 # Note: Need to remove line count from munch output and re-insert later, since
 #       the following command may remove some lines
 nynorsk.mch: munch munch0.nynorsk nn_NO.aff.munch
-	./$^ 2> /dev/null | tail +2 \
-	  | sed -e N -e '/\(xxxx\|yyyy\)\// D' -e 's/^\(\([-${CH}]\)*\)er\/\(.*F.*\)\n\1rar\/M$$/\1er\/\3D/' \
-		-e '$$ p' -e '$$ d' -e P -e D | LANG=nn_NO sort \
-	  > $@ 
+	./$^ 2> /dev/null | tail +2 | perl -p -e 'tr /- 	0-9//d'\
+	 | LANG=nn_NO sort > $@
 
 words.norsk: $(addprefix norsk.words.,B A N D S)
 # Here is a rule to make a list of the most common Norwegian words.
@@ -554,7 +553,7 @@ words.norsk: $(addprefix norsk.words.,B A N D S)
 	  | tr -d '*' \
 	  | awk --re-interval --source ${WORDSFILTER} \
 	  | tr -d '\"-' \
-	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
+	  | grep -v 'xxxx' \
 	  | LANG=nb_NO sort -f \
 	  > $@
 
@@ -573,7 +572,7 @@ words.${LANGUAGE}.%: $(addprefix ${LANGUAGE}.words.,B A N D S)
 	  | grep  ' $* ' \
 	  | sed -e 's/ .*//' \
 	  | tr -d - \
-	  | grep -v '\(xxxx\|yyyy\|zyzyzy\)' \
+	  | grep -v 'xxxx' \
 	  | LANG=nb_NO sort -f \
 	  > $@
 
