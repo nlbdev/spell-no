@@ -54,11 +54,13 @@ make
 make myspell-dist
 </pre>
 Det antas her at ispell <em>ikke</em> er installert "globalt" på
-maskina - noe den ikke er på mange av dagens Linux-distribusjoner, da
+maskina, men må bygges ved hjelp av (f.eks.)
+<a href="http://fmg-www.cs.ucla.edu/geoff/tars/ispell-3.3.02.tar.gz">ispell-3.3.02.tar.gz</a>.
+Dette er nødvendig på mange av dagens Linux-distribusjoner, da
 disse har <a href="http://aspell.sourceforge.net/">aspell</a> i stedet.
 
 I motsatt fall kan man hoppe over stegene som er relatert til bygging
-av ispell denne, slik at man får bare
+av ispell, slik at man får bare
 <pre>
 tar xvzf ispell-norsk-3.0.tar.gz
 cd norsk
