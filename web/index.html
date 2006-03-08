@@ -10,7 +10,10 @@ til en ryddig dokumentasjon en gang, men jeg tviler egentlig litt...
 <p>
 Først av alt: <a href="ooinstall.html">Her</a> finner du <em>litt</em>
 om installasjon av ordlister for Open Office - men egentlig bør du se
-etter dokumentasjon av dette på <a href=" http://lingucomponent.openoffice.org/">openoffice.org</a>
+etter dokumentasjon av dette på <a href="http://lingucomponent.openoffice.org/">openoffice.org</a>
+<p>
+Og: <a href="http://www.sourceforge.net/projects/spell-no">Her</a> er
+SourceFoges prosjektside for det hele.
 
 <p>
 Så:  Her er noen andre interessante filer:
@@ -18,12 +21,13 @@ Så:  Her er noen andre interessante filer:
 <li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/norsk/Makefile">Makefile</a></li>
 <li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/norsk/iaff2myaff.pl">iaff2myaff.pl</a>
 <li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/norsk/expndflg.pl">expndflg.pl</a>
-<li><a href="http://prdownloads.sourceforge.net/spell-no/ispell-norsk-2.0p2.tar.gz?download">ispell-norsk-2.0p2.tar.gz</a>
-(Distribusjon fra 
-<a href="http://folk.uio.no/runekl/dictionary.html">
-http://folk.uio.no/runekl/dictionary.html</a>
-oppdatert med over nevnte filer.)
-<li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/patches/ispell-3.2.06.no.patch">ispell-3.2.06.no.patch</a>
+<li><a href="http://prdownloads.sourceforge.net/spell-no/ispell-norsk-3.0.tar.gz?download">ispell-norsk-3.0.tar.gz</a>
+(Sourcedistribusjon som inneholder over nevnte filer samt oppdaterte
+versjon av diverse annet fra <a
+href="http://folk.uio.no/runekl/dictionary.html">http://folk.uio.no/runekl/dictionary.html</a>.)
+<li><a
+href="http://cvs.sourceforge.net/viewcvs.py/spell-no/">Alle
+source-filer via CVS</a>
 <li><a href="http://ftp.services.openoffice.org/pub/OpenOffice.org/contrib/dictionaries/nb_NO.zip">nb_no.zip</a>,
 <a href="http://ftp.services.openoffice.org/pub/OpenOffice.org/contrib/dictionaries/nn_NO.zip">nn_no.zip</a>
 (Ordlister via nedlasting fra OpenOffice.org.)
@@ -32,28 +36,42 @@ that may be used to transfer dictionaries from OpenOffice.org to Mozilla.
 </ul>
 
 <p>
+Selve ordlistene kan bygges med f.eks.
+
+<p>
 For å bygge det hele, prøv følgende:
 <pre>
-tar xvzf ispell-3.2.06.tar.gz
-patch -p0 ispell-3.2.06.no.patch
-cd ispell-3.2.06
-cp local.h.samp local.h
+tar xvzf ispell-3.3.02.tar.gz
+cd ispell-3.3.02
+cp local.h.&lt;system&gt; local.h
 make
-make unsq
 
 cd languages
 rm -rf norsk
-tar xvzf ispell-norsk-2.0p1.tar.gz
+tar xvzf ispell-norsk-3.0.tar.gz
 cd norsk
 make
 make myspell-dist
 </pre>
-Merk: Vil benytte kommandoer bygd ved hjelp av
-<a href="http://fmg-www.cs.ucla.edu/geoff/tars/ispell-3.2.06.tar.gz">ispell-3.2.06.tar.gz</a>
-under generering av ordlister. Bygging via <i>installert</i> ispell
-er ikke testet, bl.a. fordi en del av dagens Linux-distribusjoner
-innholder <a href="http://aspell.sourceforge.net/">aspell</a> i stedet.
-</body>
+Det antas her at ispell <em>ikke</em> er installert "globalt" på
+maskina - noe den ikke er på mange av dagens Linux-distribusjoner, da
+disse har <a href="http://aspell.sourceforge.net/">aspell</a> i stedet.
+
+I motsatt fall kan man hoppe over stegene som er relatert til bygging
+av ispell denne, slik at man får bare
+<pre>
+tar xvzf ispell-norsk-3.0.tar.gz
+cd norsk
+make
+make myspell-dist
+</pre>
+
+Man kan også gjøre
+<pre>
+make ISPELLDIST=&lt;path&gt;/ispell-3.3.02
+</pre>
+Om man allerede har pakket ut og kompilert ispell under &lt;path&gt;
+
 <p>
 Nyeste versjon støtter også aspell "wordlist distributions". Disse kan
 bygges ved å kalle
