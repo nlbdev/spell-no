@@ -17,9 +17,10 @@ of hyphenation patterns that works on non-compound words.
 
 The latest version is available at
 
-http://www.uio.no/~runekl/dictionary.html
+http://sourceforge.net/projects/spell-no
 
-Comments, suggestions and bug-reports to runekl@math.uio.no.
+For comments, suggestions and bug-reports, please refer to addresses
+at the above mentioned project page.
 
 
 
@@ -29,14 +30,16 @@ BUILDING A NORWEGIAN ISPELL DICTIONARY
 * Get the ispell sources and unpack it.
 
   cd /source
-  tar -zxvf ispell-3.1.20.tar.gz
+  tar -zxvf ispell-3.3.02.tar.gz
 
   You can also unpack the sources for the Norwegian dictionary now:
 
   cd ispell-3.1/languages
-  tar -zxvf ispell-norsk-2.0.tar.gz
+  tar -zxvf ispell-3.3.02.tar.gz
 
 * Patch Ispell
+
+  [ Note: This step may not be necessary if using ispell-3.3 ]
 
   I have made a patch for ispell based mainly on other patches found
   on the net.  If you think you have found a bug in ispell, please
@@ -90,13 +93,13 @@ BUILDING A NORWEGIAN ISPELL DICTIONARY
   
   So if you are feeling a little brave;
 
-  cd ispell-3.1
+  cd ispell-3.3.02
   patch < languages/norsk/ispell-3.1.20.no.patch
 
   Additional patches might be needed on various systems.  The Redhat
   source RPM is a good place to look if something fails.
 
-* CONFIGURE ISPELL The file Config.X in the ispell-3.1 distribution
+* CONFIGURE ISPELL The file Config.X in the ispell-3.3 distribution
   contains configuration information for ispell (no ./configure yet).
   The definitions are overridden by those in the file local.h, for
   which there is a local.h.samp.  The following local.h works for me
@@ -124,7 +127,7 @@ sh,EXTRADICT=/usr/dict/words} {norsk}"
   It might be wise to try to build ispell only for English, to test that
   everything works, and add new languages afterwards.
 
-  cd ispell-3.1
+  cd ispell-3.3
   make all
 
   This takes some time, but almost nothing compared to building the
