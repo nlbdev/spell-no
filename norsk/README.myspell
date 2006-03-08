@@ -1,8 +1,9 @@
 Norwegian dictionary, bokmål or nynorsk, for MySpell, i.e.
 OpenOffice.org, Mozilla etc. Should be quite complete, but comes with
-no warranty whatsoever. Based on Rune Kleveland's Norwegian ispell
-dictionaries, and covered by its licence (GPL). For more information,
-please refer to http://folk.uio.no/runekl/dictionary.html
+no warranty whatsoever. Origially based on the dictionaries at 
+http://folk.uio.no/runekl/dictionary.html published by Rune Kleveland,
+and by their licence (GPL). The dictionary's home is now
+http://spell-no.sourceforge.net/
 
 Nynorsk dictionary files have root "nn_NO"; bokmål "nb_NO".
 
@@ -14,4 +15,4 @@ And the nynorsk one:
 
 DICT nn NO nn_NO
 
-8 December 2004, Toralf Lund <toralf@procaptura.com>
+8 March 2006, Toralf Lund (http://sourceforge.net/users/toralfl/)
