@@ -17,9 +17,12 @@ BUILDHASH	=	PATH=$(ISPELLDIST):${PATH} buildhash
 LANGUAGE	=	norsk
 DICTIONARY	=	$(LANGUAGE).mch
 HASHFILE	=	$(LANGUAGE).hash
-
+VERSION         =       3.0
 # Version no for aspell dictionary output
 ASPELL_VERSION	=	0.60
+
+DISTFILES 	= *.pl *.c *.h *.in *.words\
+	          Makefile README* forkort.txt
 
 
 #
@@ -576,6 +579,16 @@ words.${LANGUAGE}.%: $(addprefix ${LANGUAGE}.words.,B A N D S)
 	  | LANG=nb_NO sort -f \
 	  > $@
 
+dist: ispell-$(LANGUAGE)-$(VERSION).tar.gz
+	rm -rf $(LANGUAGE)
+
+
+ispell-$(LANGUAGE)-$(VERSION).tar.gz: $(LANGUAGE)
+	tar cvf - $< | gzip > $@
+
+$(LANGUAGE):
+	install -d -m 775 $@
+	install -m 444 $(DISTFILES) $@
 
 clean:
 	rm -f core *.hash *.stat *.cnt munch[0123].* \
