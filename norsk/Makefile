@@ -374,7 +374,7 @@ $(addprefix ${LANGUAGE}.words.,${CATHEGORIES}): ${LANGUAGE}.words.% : ${LANGUAGE
 # use the 'munch' utility from MySpell instead; its source code is expected to
 # be available on this directory
 
-munch0.%: ${LANGUAGE}.words.%
+$(addprefix munch0.,${CATHEGORIES}): munch0.%: ${LANGUAGE}.words.%
 	rm -f $@
 	wc -l < $< > $@
 	sed -e 's/ .*//' -e 's/ \*//' $< >> $@
@@ -382,7 +382,7 @@ munch0.%: ${LANGUAGE}.words.%
 $(addprefix munch1.,${CATHEGORIES}): munch1.% : munch munch0.% nb_NO.aff.munch
 	./$^ 2> /dev/null | tail +2 > $@
 
-munch2.%: munch1.%
+$(addprefix munch2.,${CATHEGORIES}): munch2.%: munch1.%
 	perl expndflg.pl $< | sort  '-t/' -u +0f -1 +0 > $@
 
 
@@ -394,7 +394,7 @@ munch2.%: munch1.%
 #     å beholde <ord>/ak
 
 
-munch3.%: unmunch munch2.% nb_NO.aff.munch ${LANGUAGE}.words.%
+$(addprefix munch3.,${CATHEGORIES}): munch3.%: unmunch munch2.% nb_NO.aff.munch ${LANGUAGE}.words.%
 # This pipe produce a file containing the a line number of munch2 and
 # the frequency indicator for that line.  Note that the summation rule
 # is not the usual one.
