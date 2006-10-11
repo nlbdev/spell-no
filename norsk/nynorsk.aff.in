@@ -761,7 +761,7 @@ flag ~\_:      # endelse: -ings
 
 flag ~\`:
     E              >       -E,NINGS        #~ avskrive > avskrivnings-
-    Z Y Z Y Z Y    >       -XXXX,-	   #- flerexxxx > flere-
+    X X X X	   >       -XXXX,-	   #- flerexxxx > flere-
 
 # Ikke behandlet er avledningsendelser som: -dom, -sjon, -ig, -isk.
 # Fjerne alle flagg som genererer et annet basisord. (ert -> erts)
