@@ -13,7 +13,7 @@ om installasjon av ordlister for Open Office - men egentlig bør du se
 etter dokumentasjon av dette på <a href="http://lingucomponent.openoffice.org/">openoffice.org</a>
 <p>
 Og: <a href="http://www.sourceforge.net/projects/spell-no">Her</a> er
-SourceFoges prosjektside for det hele.
+SourceForges prosjektside for det hele.
 
 <p>
 Så:  Her er noen andre interessante filer:
@@ -22,8 +22,8 @@ Så:  Her er noen andre interessante filer:
 <li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/norsk/iaff2myaff.pl">iaff2myaff.pl</a>
 <li><a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/spell-no/norsk/expndflg.pl">expndflg.pl</a>
 <li><a href="http://prdownloads.sourceforge.net/spell-no/ispell-norsk-3.0.tar.gz?download">ispell-norsk-3.0.tar.gz</a>
-(Sourcedistribusjon som inneholder over nevnte filer samt oppdaterte
-versjon av diverse annet fra <a
+(Sourcedistribusjon som inneholder over nevnte filer samt nye
+versjoner av diverse annet fra <a
 href="http://folk.uio.no/runekl/dictionary.html">http://folk.uio.no/runekl/dictionary.html</a>.)
 <li><a
 href="http://cvs.sourceforge.net/viewcvs.py/spell-no/">Alle
@@ -37,9 +37,22 @@ that may be used to transfer dictionaries from OpenOffice.org to Mozilla.
 
 <p>
 Selve ordlistene kan bygges med f.eks.
+<pre>
+tar xvzf ispell-norsk-3.0.tar.gz
+cd norsk
+make
+make myspell-dist
+</pre>
 
-<p>
-For å bygge det hele, prøv følgende:
+Dette forutsetter imidlertid at ispell-programvaren er installert "globalt" på
+systemet. Det er ikke tilfelle i mange av dagens
+Linux-distribusjoner, da disse har <a
+href="http://aspell.sourceforge.net/">aspell</a> i stedet. Man må da
+gjerne starte med ispells kildekode fra (f.eks.)
+<a
+href="http://fmg-www.cs.ucla.edu/geoff/tars/ispell-3.3.02.tar.gz">ispell-3.3.02.tar.gz</a>,
+og kommanoene (inkludert bygging av selve ispell) blir:
+
 <pre>
 tar xvzf ispell-3.3.02.tar.gz
 cd ispell-3.3.02
@@ -48,20 +61,6 @@ make
 
 cd languages
 rm -rf norsk
-tar xvzf ispell-norsk-3.0.tar.gz
-cd norsk
-make
-make myspell-dist
-</pre>
-Det antas her at ispell <em>ikke</em> er installert "globalt" på
-maskina, men må bygges ved hjelp av (f.eks.)
-<a href="http://fmg-www.cs.ucla.edu/geoff/tars/ispell-3.3.02.tar.gz">ispell-3.3.02.tar.gz</a>.
-Dette er nødvendig på mange av dagens Linux-distribusjoner, da
-disse har <a href="http://aspell.sourceforge.net/">aspell</a> i stedet.
-
-I motsatt fall kan man hoppe over stegene som er relatert til bygging
-av ispell, slik at man får bare
-<pre>
 tar xvzf ispell-norsk-3.0.tar.gz
 cd norsk
 make
