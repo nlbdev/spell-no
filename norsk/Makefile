@@ -17,7 +17,7 @@ BUILDHASH	=	PATH=$(ISPELLDIST):${PATH} buildhash
 LANGUAGE	=	norsk
 DICTIONARY	=	$(LANGUAGE).mch
 HASHFILE	=	$(LANGUAGE).hash
-VERSION         =       3.0
+VERSION         =       3.1
 # Version no for aspell dictionary output
 ASPELL_VERSION	=	0.60
 
