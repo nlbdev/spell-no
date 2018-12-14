@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="nb">
+  <head>
+    <title>Norwegian hyphenation dictionary</title>
+    <meta charset="UTF-8">
+    <style type="text/css">
+      body {
+        font-family: monospace;
+      }
+      input {
+        font-family: monospace;
+        font-size: 100%;
+      }
+      input[disabled] {
+        background-color: #eee;
+      }
+      #top {
+        padding-bottom: 7px;
+        border-bottom: 1px solid black;
+      }
+      #left {
+        float: left;
+        width: 50%;
+        border-right: 1px solid black;
+      }
+      #right {
+        overflow: auto;
+      }
+      ul {
+        padding: 0;
+        margin: 0;
+        list-style-type: none;
+      }
+      li {
+        background: white;
+        color: #aaa;
+        padding: 0 4px;
+        height: 0;
+        overflow: hidden;
+        transition: height .8s;
+      }
+      li.fixed, li.related {
+        height: 1em;
+        padding: 4px;
+        border-bottom: 1px solid #ddd;
+        overflow: initial;
+      }
+      li.selected {
+        background-color: #8de;
+      }
+      li.related {
+        background-color: #fe5;
+      }
+      span {
+        color: black;
+      }
+      span.warning {
+        color: red;
+        font-weight: bold;
+      }
+      span.xxxx {
+        font-weight: bold;
+        font-style: italic;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="top">
+      <input type ="text" id="search" autocomplete="off" disabled="disabled"></input>
+    </div>
+    <div id="left">
+      <ul id="words"></ul>
+    </div>
+    <div id="right">
+      <ul id="singlewords"></ul>
+    </div>
+    <script type="text/javascript">
+      (function() {
+        var search = document.getElementById('search');
+        var listsLoaded = 0;
+        
+        // parse norsk.words
+        var allWords = [];
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              var regex = /([^ ]+) .*/;
+              var k = 0;
+              xhr.responseText.split('\n').forEach(function(line) {
+                if (!line.startsWith('#')) {
+                  line = line.replace(regex, '$1')
+                  var components = line.split('-');
+                  var xxxx = false;
+                  if (components[components.length - 1] == 'xxxx') {
+                    xxxx = true;
+                    components.pop();
+                  }
+                  allWords.push({
+                    value: line,
+                    components: components,
+                    xxxx: xxxx,
+                    searchValue: components.join('').toLowerCase()
+                  });
+                }
+              });
+              // enable search field
+              if (++listsLoaded == 2) search.removeAttribute('disabled');
+            }
+          }
+        }
+        xhr.open('GET', 'https://raw.githubusercontent.com/nlbdev/spell-no/master/norsk/norsk.words');
+        xhr.overrideMimeType('text/html; charset=ISO-8859-1');
+        xhr.send(null);
+        
+        // parse norsk.singlewords
+        var allSingleWords = [];
+        var xhr2 = new XMLHttpRequest();
+        xhr2.onreadystatechange = function() {
+          if (xhr2.readyState === 4) {
+            if (xhr2.status === 200) {
+              var regex = /-/g;
+              var k = 0;
+              xhr2.responseText.split('\n').forEach(function(line) {
+                allSingleWords.push({
+                  value: line.replace(regex, '·'),
+                  searchValue: line.replace(regex, '').toLowerCase()
+                });
+              });
+              // enable search field
+              if (++listsLoaded == 2) search.removeAttribute('disabled');
+            }
+          }
+        }
+        xhr2.open('GET', 'https://raw.githubusercontent.com/nlbdev/spell-no/master/norsk/patterns/norsk.singlewords');
+        xhr2.overrideMimeType('text/html; charset=ISO-8859-1');
+        xhr2.send(null);
+        
+        // implement search function
+        var searchResultCompound = document.getElementById('words')
+        var searchResultSingle = document.getElementById('singlewords')
+        var currentSearchString = '';
+        var currentFilteredWords = [];
+        var currentFilteredSingleWords = [];
+        var nextSearch = null;
+        search.addEventListener('input', function() {
+          var searchString = search.value.toLowerCase();
+          if (searchString.length == 0) {
+            currentSearchString = '';
+            currentFilteredWords = [];
+            currentFilteredSingleWords = [];
+            searchResultCompound.innerHTML = '';
+            searchResultSingle.innerHTML = '';
+            return;
+          }
+          var doSearch = function() {
+            if (currentSearchString == '' || !searchString.includes(currentSearchString)) {
+              currentFilteredWords = allWords;
+              currentFilteredSingleWords = allSingleWords;
+            }
+            var filteredWords = currentFilteredWords.filter(function(w) {
+              return w.searchValue.includes(searchString);
+            });
+            // split up in components
+            var components = new Set();
+            filteredWords.forEach(function(w) {
+              for (var i = 0, len = w.components.length; i < len; i++) {
+                components.add(w.components[i].toLowerCase());
+              };
+            });
+            // find components in norsk.words itself
+            var componentsInWords = new Set();
+            // components may have sub-components themselves
+            var findSubComponentsIn = new Set(components);
+            while (findSubComponentsIn.size > 0) {
+              var moreComponents = new Set();
+              currentFilteredWords.forEach(function(w) {
+                if (findSubComponentsIn.has(w.searchValue)) {
+                  componentsInWords.add(w.searchValue);
+                  filteredWords.forEach(function(ww) {
+                    if (ww.components.filter(ww => ww.toLowerCase() == w.searchValue).length > 0) {
+                      if (!('related' in ww))
+                        ww.related = [];
+                      if (ww !== w)
+                        ww.related.push(w);
+                    }
+                  });
+                  if (!w.searchValue.includes(searchString))
+                    filteredWords.push(w);
+                  var len = w.components.length;
+                  if (len > 1)
+                    for (var i = 0; i < len; i++) {
+                      var comp = w.components[i].toLowerCase();
+                      if (!components.has(comp)) {
+                        components.add(comp);
+                        moreComponents.add(comp);
+                      }
+                    }
+                }
+              });
+              findSubComponentsIn = moreComponents;
+            }
+            // find components in norsk.singlewords
+            var filteredSingleWords = [];
+            var componentsInSingleWords = new Set();
+            currentFilteredSingleWords.forEach(function(w) {
+              if (components.has(w.searchValue)) {
+                componentsInSingleWords.add(w.searchValue);
+                filteredWords.forEach(function(ww) {
+                  if (ww.components.filter(www => www.toLowerCase() == w.searchValue).length > 0) {
+                    if (!('related' in ww))
+                      ww.related = [];
+                    ww.related.push(w);
+                  }
+                });
+                filteredSingleWords.push(w);
+              } else if (w.searchValue.includes(searchString))
+                filteredSingleWords.push(w);
+            });
+            // render
+            var fragment = document.createDocumentFragment();
+            filteredWords.sort(function(a, b) { return a.searchValue.localeCompare(b.searchValue); })
+                         .forEach(function(w) {
+              if (!('related' in w)) w.related = [];
+              var li;
+              if (!('element' in w)) {
+                li = document.createElement('li');
+                w.element = li;
+                li.addEventListener('click', function() {
+                  if (!w.searchValue.includes(currentSearchString))
+                    return;
+                  currentFilteredWords.forEach(function(ww) {
+                    ww.element.classList.remove('selected');
+                    ww.element.classList.remove('related');
+                  });
+                  li.classList.add('selected');
+                  currentFilteredSingleWords.forEach(function(ww) {
+                    ww.element.classList.remove('related');
+                  });
+                  // find related words, including related of related
+                  var related = new Set();
+                  var findRelatedOf = new Set();
+                  findRelatedOf.add(w);
+                  while (findRelatedOf.size > 0) {
+                    var moreRelated = new Set();
+                    findRelatedOf.forEach(function(ww) {
+                      if ('related' in ww)
+                        ww.related.forEach(function(www) {
+                          if (www != w && !related.has(www)) {
+                            related.add(www);
+                            moreRelated.add(www);
+                          }
+                        });
+                    });
+                    findRelatedOf = moreRelated;
+                  }
+                  related.forEach(function(ww) {
+                    ww.element.classList.add('related');
+                  });
+                });
+                for (var i = 0, len = w.components.length; i < len; i++) {
+                  if (i > 0)
+                    li.appendChild(document.createTextNode('|'));
+                  var span = document.createElement('span');
+                  var comp = w.components[i].toLowerCase();
+                  // mark components in norsk.words that can not be found in norsk.singlewords or in norsk.words itself
+                  if (len > 1 && !componentsInSingleWords.has(comp) && !componentsInWords.has(comp)) {
+                    span.className = 'warning';
+                    span.setAttribute('title', '"' + comp + '" is not in norsk.singlewords');
+                  }
+                  span.textContent = w.components[i];
+                  li.appendChild(span);
+                }
+                if (w.xxxx) {
+                  li.appendChild(document.createTextNode('|'));
+                  var span = document.createElement('span');
+                  span.textContent = 'xxxx';
+                  span.className = 'xxxx';
+                  li.appendChild(span);
+                }
+              } else
+                li = w.element;
+              if (w.searchValue.includes(searchString))
+                li.className = 'fixed';
+              else
+                li.className = '';
+              fragment.appendChild(li);
+            });
+            searchResultCompound.innerHTML = '';
+            searchResultCompound.appendChild(fragment);
+            fragment = document.createDocumentFragment();
+            filteredSingleWords.sort(function(a, b) { return a.searchValue.localeCompare(b.searchValue); })
+                               .forEach(function(w) {
+              var li;
+              if ('element' in w)
+                li = w.element;
+              else {
+                li = document.createElement('li');
+                w.element = li;
+                var span = document.createElement('span');
+                // mark words in norsk.singlewords that are not a component or complete word in norsk.words
+                if (!componentsInSingleWords.has(w.searchValue)) {
+                  span.className = 'warning';
+                  span.setAttribute('title', '"' + w.searchValue + '" is not a word or word component in norsk.singlewords');
+                }
+                span.textContent = w.value;
+                li.appendChild(span);
+              }
+              if (w.searchValue.includes(searchString))
+                li.className = 'fixed';
+              else
+                li.className = '';
+              fragment.appendChild(li);
+            });
+            searchResultSingle.innerHTML = '';
+            searchResultSingle.appendChild(fragment);
+            currentFilteredWords = filteredWords;
+            currentFilteredSingleWords = filteredSingleWords;
+            currentSearchString = searchString;
+          };
+          // FIXME: could make delay dependent on factors like:
+          // - searchString.length
+          // - searchString.includes(currentSearchString)
+          var delay = 1000;
+          nextSearch = doSearch;
+          setTimeout(function() {
+            if (nextSearch === doSearch) {
+              doSearch();
+              nextSearch = null;
+            }
+          }, delay);
+        });
+      })();
+    </script>
+  </body>
+</html>
