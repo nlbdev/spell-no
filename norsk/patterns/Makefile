@@ -1043,3 +1043,6 @@ patw9.txt: patw8.txt hyphenologist.verygood no.tra1
 	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
+# Create patterns file for OpenOffice.org (Libhyphen)
+hyph_no_NO.dic: pat49.txt
+	LC_CTYPE=UTF-8 perl substrings.pl $< $@ ISO8859-1 2 2
