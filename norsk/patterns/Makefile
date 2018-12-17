@@ -1,3 +1,5 @@
+#-*- tab-width: 8; fill-column: 70 -*-
+
 # Makefile for the TeX-patterns related stuff.
 
 # The purpose of this script is to generate hyphenation patterns for
@@ -40,6 +42,7 @@
 # programmer.
 
 SHELL = /bin/bash
+PATGEN = ./patgen
 
 # The characters used in the Norwegian language.
 UCH=A-ZÆØÅÉÈÔÒÇ
@@ -49,6 +52,9 @@ CH=${LCH}${UCH}
 # Regular expression matching the words with spesial casing, e.g. UiO
 # etc.  Those words should probably never be hyphenated.
 NOHYPHWORDS=^[${UCH}][${CH}]*[${UCH}]
+
+# Files are encoded in iso-latin-1-unix
+export LC_CTYPE = LATIN1
 
 .DELETE_ON_ERROR:
 
@@ -121,15 +127,23 @@ hyphlist2.txt.gz: hyphlist1.txt.gz  pat19.txt no.tra
 # 	source file
 
 	@echo "Running patgen"
-	echo -e 2 1'\n'y | patgen $(subst .txt.gz,.tmp,$@) pat19.txt /dev/null no.tra
+#	When providing a hyph_start > hyph_finish, patgen will not
+#	generate any patterns, but only hyphenate the given list of
+#	words with the given patterns. Note however that, at least
+#	with my version of patgen, it does not work as expected when
+#	the input words already contain hyphens, which is the case for
+#	example in the `diff.nohyph%' rule below. The problem is that
+#	the hyphens will not be marked with '*' when found by the
+#	patterns.
+	echo -e 2 1'\n'y | $(PATGEN) $(subst .txt.gz,.tmp,$@) pat19.txt /dev/null no.tra
 
 	@echo "Parsing Patgen output"
-	sed -e 's/z\.\?z\.\?z/î/' \
+	sed -e 's/z\.*z\.*z/î/' \
 	    -e 's/\./-/g' \
-	    -e 's/y\.\?y\.\?y/\"/g' pattmp \
+	    -e 's/y\.*y\.*y/\"/g' pattmp \
 	  | sed -e '$$ p' -e '$$ N' -e ':START' \
 	        -e '$$ ! N' \
-	        -e 's/\([^î]\)\n\([^î\n]\)/\1--\2/g' \
+	        -e 's/\([^î]\)\n\([^î]\)/\1--\2/g' \
 	        -e 't START' -e P -e D \
 	  | sed -e '/^î$$/ D' -e 's/\(.\)\1--\"--/\"\1/g' \
 	 >> $(subst .txt.gz,.nohyph,$@)
@@ -169,16 +183,16 @@ hyphlist3.txt.gz: hyphlist2.txt.gz no.tra1 norsk.single.pat
 
 	@echo "Running patgen"
 	echo -e 2 1'\n'y | \
-	patgen $(subst .txt.gz,.tmp,$@) norsk.single.pat /dev/null no.tra1
+	$(PATGEN) $(subst .txt.gz,.tmp,$@) norsk.single.pat /dev/null no.tra1
 
 	@echo "Parsing Patgen output"
-	sed -e 's/z\.\?z\.\?z/î/' \
-	    -e 's/d\.\?d\.\?d/â/' \
+	sed -e 's/z\.*z\.*z/î/' \
+	    -e 's/d\.*d\.*d/â/' \
 	    -e 's/\./-/g' \
-	    -e 's/y\.\?y\.\?y/\"/g' pattmp \
+	    -e 's/y\.*y\.*y/\"/g' pattmp \
 	  | sed -e '$$ p' -e '$$ N' -e ':START' \
 	        -e '$$ ! N' \
-	        -e 's/\([^î]\)\n\([^î\n]\)/\1--\2/g' \
+	        -e 's/\([^î]\)\n\([^î]\)/\1--\2/g' \
 	        -e 't START' -e P -e D \
 	  | sed -e 's/--â--/---/g' \
 	  | sed -e '/^î$$/ D' -e 's/\(.\)\1--\"--/\"\1/g' \
@@ -229,19 +243,18 @@ hyphlist4.txt.gz: hyphlist3.txt.gz
 	@echo "Removing some ugly hyphenation points"
 	gzip -d < $< \
 	  | sed \
-	    -e 's/\(---\?[${CH}]\{1,2\}\)-\([${CH}]\{1,2\}---\?\)/\1\?\2/g'\
-	    -e 's/\(-[${CH}]\{1,2\}\)-\([${CH}]\{2\}---\?\)/\1\?\2/g' \
-	    -e 's/\(---\?[${CH}]\)-/\1\?/g' \
-	    -e 's/\([${CH}]\{2\}\)-\([${CH}]\{2\}---\?\)/\1\?\2/g' \
-	    -e 's/\(\(\".\|---\?\)[${CH}]\{2\}\)-\([${CH}]\{2\} \)/\1\?\3/g'\
+	    -e 's/\(---*[${CH}]\{1,2\}\)-\([${CH}]\{1,2\}---*\)/\1\?\2/g'\
+	    -e 's/\(-[${CH}]\{1,2\}\)-\([${CH}]\{2\}---*\)/\1\?\2/g' \
+	    -e 's/\(---*[${CH}]\)-/\1\?/g' \
+	    -e 's/\([${CH}]\{2\}\)-\([${CH}]\{2\}---*\)/\1\?\2/g' \
+	    -e 's/\(\(\".\|---*\)[${CH}]\{2\}\)-\([${CH}]\{2\} \)/\1\?\3/g'\
 	    -e 's/^\([${CH}]\{1,2\}\)-\([${CH}]\{1,2\} \)/\1\?\2/g' \
 	    -e 's/\([^-]\)-\([${CH}]\"\)/\1\?\2/g' \
 	  | gzip -9 > $@
-	rm -f $(subst .txt.gz,.patinput,$@)
 
 # Do some counting
 
-	@gzip -l $@ $< \
+	@: gzip -l $@ $< \
 	   | grep hyphlist \
 	   | cut -d ' ' -f5 \
 	   | tr '\n' ' ' \
@@ -337,7 +350,6 @@ feil.%: pattmp
 	  | grep [.-] \
 	  | sed -e 's/^\([^0-9]\)/1\1/' \
 	        -e 's/^\([0-9]\)\([^ ]* \)/\2\1 /' \
-	  | sort -s +2 \
 	  | gzip -9 \
 	  > $@
 
@@ -402,52 +414,52 @@ pat0.txt:
 pat11.txt: pat0.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '1 1\n2 5\n1 2 20\nn' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 
 pat12.txt: pat11.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '2 2\n2 6\n1 2 12\nn' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 
 pat13.txt: pat12.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '3 3\n2 6\n1 2 10\nn' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 
 pat14.txt: pat13.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '4 4\n2 7\n1 2 7\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat15.txt: pat14.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '5 5\n2 8\n2 4 9\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat16.txt: pat15.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '6 6\n2 10\n1 2 4\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat17.txt: pat16.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '7 7\n2 12\n1 2 2\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat18.txt: pat17.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
 	echo -e '8 8\n2 15\n1 1 1\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat19.txt: pat18.txt hyphlist1.txt.gz no.tra
 	${MAKE} hyphlist1.patinput
-	echo -e '9 9\n2 18\n2 2 1\ny' | \
-	patgen hyphlist1.patinput $< $@ no.tra
+	echo -e '9 9\n2 15\n2 2 1\ny' | \
+	$(PATGEN) hyphlist1.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 	rm hyphlist1.patinput
 
@@ -461,52 +473,52 @@ pat19.txt: pat18.txt hyphlist1.txt.gz no.tra
 pat21.txt: pat0.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '1 1\n2 5\n1 2 20\nn' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 
 pat22.txt: pat21.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '2 2\n2 6\n1 2 12\nn' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 
 pat23.txt: pat22.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '3 3\n2 6\n1 2 10\nn' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 
 pat24.txt: pat23.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '4 4\n2 7\n1 2 7\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat25.txt: pat24.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '5 5\n2 8\n2 4 9\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat26.txt: pat25.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '6 6\n2 10\n1 2 4\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat27.txt: pat26.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '7 7\n2 12\n1 2 2\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat28.txt: pat27.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
 	echo -e '8 8\n2 15\n1 1 1\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 
 pat29.txt: pat28.txt hyphlist2.txt.gz no.tra
 	${MAKE} hyphlist2.patinput
-	echo -e '9 9\n2 18\n2 2 1\ny' | \
-	patgen hyphlist2.patinput $< $@ no.tra
+	echo -e '9 9\n2 15\n2 2 1\ny' | \
+	$(PATGEN) hyphlist2.patinput $< $@ no.tra
 	${MAKE} feil.$@.gz
 	rm hyphlist2.patinput
 
@@ -524,52 +536,52 @@ pat29.txt: pat28.txt hyphlist2.txt.gz no.tra
 pat41.txt: pat0.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '1 1\n2 4\n1 2 20\nn' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 
 pat42.txt: pat41.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '2 2\n2 4\n1 2 15\nn' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 
 pat43.txt: pat42.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '3 3\n2 5\n1 2 12\nn' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 
 pat44.txt: pat43.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '4 4\n2 6\n3 5 13\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 
 pat45.txt: pat44.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '5 5\n2 7\n3 5 12\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 
 pat46.txt: pat45.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '6 6\n2 8\n2 3 4\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 
 pat47.txt: pat46.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '7 7\n2 9\n1 2 2\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 
 pat48.txt: pat47.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '8 8\n2 9\n1 1 1\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 
 pat49.txt: pat48.txt hyphlist4.txt.gz no.tra1
 	${MAKE} hyphlist4.patinput
 	echo -e '9 9\n2 10\n1 2 1\ny' | \
-	patgen hyphlist4.patinput $< $@ no.tra1
+	$(PATGEN) hyphlist4.patinput $< $@ no.tra1
 	${MAKE} feil.$@.gz
 	rm hyphlist4.patinput
 
@@ -852,7 +864,7 @@ nohyph%.tex: pat%9.txt #pate30.txt
 
 
 
-norsk.singlewords:  norsk.single.pat no.tra1 # hyphlist2.txt.gz
+norsk.singlewords:  norsk.single.pat no.tra1 hyphlist2.txt.gz
 	gzip -d < hyphlist2.txt.gz \
 	  | cut -d ' ' -f 1 \
 	  | grep -v -e ${NOHYPHWORDS} \
@@ -861,10 +873,10 @@ norsk.singlewords:  norsk.single.pat no.tra1 # hyphlist2.txt.gz
 	  | sort \
 	  | uniq -c \
 	  | sort -r -s -k1,1 \
-	  | sed -e 's/^.*[0-9]\+.//' \
+	  | sed -e 's/^.*[0-9][0-9]*.//' \
 	  > $@
 	echo -e 2 1'\n'y | \
-	patgen $@ $< /dev/null no.tra1
+	$(PATGEN) $@ $< /dev/null no.tra1
 	cat pattmp | tr '.' '-' > $@
 	rm -f pattmp
 
@@ -886,7 +898,7 @@ oldpatterns/nohyph%.txt:
 
 diff.nohyph%: norsk.singlewords oldpatterns/nohyph%.txt no.tra
 	echo -e '2 1 \ny' | \
-	patgen norsk.singlewords $(subst diff.,oldpatterns/,$@).txt /dev/null no.tra
+	$(PATGEN) norsk.singlewords $(subst diff.,oldpatterns/,$@).txt /dev/null no.tra
 	grep -v '^[${CH}]-[*${CH}]*$$' pattmp | grep [-.] > $@
 
 # A little more clever script.  Look at the result or the regexps to
@@ -897,10 +909,10 @@ diff.nohyph%: norsk.singlewords oldpatterns/nohyph%.txt no.tra
 
 diff-files: norsk.singlewords oldpatterns/nohyph1.txt oldpatterns/nohyph2.txt oldpatterns/nohyphsimen.txt no.tra no.tra1
 	echo -e '2 1 \ny' | \
-	patgen norsk.singlewords oldpatterns/nohyph1.txt /dev/null no.tra
+	$(PATGEN) norsk.singlewords oldpatterns/nohyph1.txt /dev/null no.tra
 	mv pattmp diff-file1.tmp
 	echo -e '2 1 \ny' | \
-	patgen norsk.singlewords oldpatterns/nohyphsimen.txt /dev/null no.tra
+	$(PATGEN) norsk.singlewords oldpatterns/nohyphsimen.txt /dev/null no.tra
 	paste diff-file1.tmp pattmp | \
 	sed -e 's/	/                                  /' \
 	    -e 's/^\(.\{35\}\) */\1/' | \
@@ -908,7 +920,7 @@ diff-files: norsk.singlewords oldpatterns/nohyph1.txt oldpatterns/nohyph2.txt ol
 	rm diff-file1.tmp
 	sed -e 's/^\([^ ]\+\) .*/\1/' -e 's/\.//g' diff-file2.tmp > hyph.tmp
 	echo -e '2 1 \ny' | \
-	patgen hyph.tmp oldpatterns/nohyph2.txt /dev/null no.tra1
+	$(PATGEN) hyph.tmp oldpatterns/nohyph2.txt /dev/null no.tra1
 	paste diff-file2.tmp pattmp | \
 	sed -e 's/	/                                  /' \
 	    -e 's/^\(.\{70\}\) */\1/' \
@@ -933,46 +945,46 @@ lightclean:
 
 pats1.txt: pat0.txt norsk.singlewords no.tra1
 	echo -e '1 1\n2 3\n1 2 10\nn' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 
 pats2.txt: pats1.txt norsk.singlewords no.tra1
 	echo -e '2 2\n2 4\n1 2 6\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats3.txt: pats2.txt norsk.singlewords no.tra1
 	echo -e '3 3\n2 5\n1 2 5\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats4.txt: pats3.txt norsk.singlewords no.tra1
 	echo -e '4 4\n2 6\n1 2 4\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats5.txt: pats4.txt norsk.singlewords no.tra1
 	echo -e '5 5\n2 7\n1 2 3\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats6.txt: pats5.txt norsk.singlewords no.tra1
 	echo -e '6 6\n2 7\n1 1 2\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats7.txt: pats6.txt norsk.singlewords no.tra1
 	echo -e '7 7\n2 8\n1 1 1\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats8.txt: pats7.txt norsk.singlewords no.tra1
 	echo -e '8 8\n2 9\n1 1 1\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 pats9.txt: pats8.txt norsk.singlewords no.tra1
 	echo -e '9 9\n2 10\n1 1 1\ny' | \
-	patgen norsk.singlewords $< $@ no.tra1
+	$(PATGEN) norsk.singlewords $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 
@@ -989,45 +1001,45 @@ hyphenologist.verygood: norsk.singlewords.multi
 
 patw1.txt: pat0.txt hyphenologist.verygood no.tra1
 	echo -e '1 1\n2 3\n1 2 10\nn' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 
 patw2.txt: patw1.txt hyphenologist.verygood no.tra1
 	echo -e '2 2\n2 4\n1 2 6\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw3.txt: patw2.txt hyphenologist.verygood no.tra1
 	echo -e '3 3\n2 5\n1 2 5\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw4.txt: patw3.txt hyphenologist.verygood no.tra1
 	echo -e '4 4\n2 6\n1 2 4\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw5.txt: patw4.txt hyphenologist.verygood no.tra1
 	echo -e '5 5\n2 7\n1 2 3\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw6.txt: patw5.txt hyphenologist.verygood no.tra1
 	echo -e '6 6\n2 7\n1 1 2\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw7.txt: patw6.txt hyphenologist.verygood no.tra1
 	echo -e '7 7\n2 8\n1 2 2\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw8.txt: patw7.txt hyphenologist.verygood no.tra1
 	echo -e '8 8\n2 8\n1 1 1\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
 patw9.txt: patw8.txt hyphenologist.verygood no.tra1
 	echo -e '9 9\n2 9\n1 1 1\ny' | \
-	patgen hyphenologist.verygood $< $@ no.tra1
+	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
