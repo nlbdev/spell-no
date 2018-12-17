@@ -940,6 +940,15 @@ diff-files: norsk.singlewords oldpatterns/nohyph1.txt oldpatterns/nohyph2.txt ol
 lightclean:
 	rm -f hyphlist[124].patinput
 
+clean :
+	rm -f hyph_no_NO.dic                  \
+	      hyphlist{1,2,3,4}.txt.gz        \
+	      no.tra                          \
+	      no.tra1                         \
+	      pat0.txt                        \
+	      pat{1,4}{1,2,3,4,5,6,7,8,9}.txt \
+	      pattmp
+
 
 # Here we generate patterns from the file norsk.singlewords.
 
