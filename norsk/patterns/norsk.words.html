@@ -33,7 +33,6 @@
       }
       li {
         background: white;
-        color: #aaa;
         padding: 0 4px;
         height: 0;
         overflow: hidden;
@@ -51,8 +50,14 @@
       li.related {
         background-color: #fe5;
       }
-      span {
-        color: black;
+      span + span::before {
+        content: '|';
+        color: #888;
+        font-weight: initial;
+        font-style: initial;
+      }
+      span.nonstnd {
+        color: #888;
       }
       span.warning {
         color: red;
@@ -86,12 +91,11 @@
         xhr.onreadystatechange = function() {
           if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-              var regex = /([^ ]+) .*/;
               var k = 0;
               xhr.responseText.split('\n').forEach(function(line) {
                 if (!line.startsWith('#')) {
-                  line = line.replace(regex, '$1')
-                  var components = line.split('-');
+                  line = line.replace(/([^ ]+) .*/, '$1');
+                  var components = line.replace(/"(.)\1/,'$1$1-$1').split('-');
                   var xxxx = false;
                   if (components[components.length - 1] == 'xxxx') {
                     xxxx = true;
@@ -101,7 +105,7 @@
                     value: line,
                     components: components,
                     xxxx: xxxx,
-                    searchValue: components.join('').toLowerCase()
+                    searchValue: line.replace(/-xxxx$/, '').replace(/[-"]/g,'').toLowerCase()
                   });
                 }
               });
@@ -120,12 +124,11 @@
         xhr2.onreadystatechange = function() {
           if (xhr2.readyState === 4) {
             if (xhr2.status === 200) {
-              var regex = /-/g;
               var k = 0;
               xhr2.responseText.split('\n').forEach(function(line) {
                 allSingleWords.push({
-                  value: line.replace(regex, '·'),
-                  searchValue: line.replace(regex, '').toLowerCase()
+                  value: line.replace(/-/g, '·'),
+                  searchValue: line.replace(/-/g, '').toLowerCase()
                 });
               });
               // enable search field
@@ -260,8 +263,6 @@
                   });
                 });
                 for (var i = 0, len = w.components.length; i < len; i++) {
-                  if (i > 0)
-                    li.appendChild(document.createTextNode('|'));
                   var span = document.createElement('span');
                   var comp = w.components[i].toLowerCase();
                   // mark components in norsk.words that can not be found in norsk.singlewords or in norsk.words itself
@@ -269,11 +270,13 @@
                     span.className = 'warning';
                     span.setAttribute('title', '"' + comp + '" is not in norsk.singlewords');
                   }
-                  span.textContent = w.components[i];
+                  if (w.value.includes('"'))
+                    span.innerHTML = w.value.replace(/"(.)\1/, '$1<span class="nonstnd">$1</span>-$1').replace(/-xxxx/, '').split('-')[i];
+                  else
+                    span.textContent = w.components[i];
                   li.appendChild(span);
                 }
                 if (w.xxxx) {
-                  li.appendChild(document.createTextNode('|'));
                   var span = document.createElement('span');
                   span.textContent = 'xxxx';
                   span.className = 'xxxx';
