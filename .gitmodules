@@ -1,0 +1,3 @@
+[submodule "norsk/patterns/hyphen"]
+	path = norsk/patterns/hyphen
+	url = git@github.com:hunspell/hyphen.git

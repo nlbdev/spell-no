@@ -1063,5 +1063,5 @@ norsk.nonstandard.pat : norsk.nonstandard.words
 # Create patterns file for OpenOffice.org (Libhyphen)
 hyph_no_NO.dic: pat49.txt norsk.nonstandard.pat
 	cat $^ >hyph_no_NO.dic.tmp
-	LC_CTYPE=UTF-8 perl substrings.pl hyph_no_NO.dic.tmp $@ ISO8859-1 2 3
+	LC_CTYPE=UTF-8 perl hyphen/substrings.pl hyph_no_NO.dic.tmp $@ ISO8859-1 2 3
 	rm hyph_no_NO.dic.tmp
