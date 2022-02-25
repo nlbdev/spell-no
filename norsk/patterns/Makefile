@@ -941,7 +941,8 @@ lightclean:
 	rm -f hyphlist[124].patinput
 
 clean :
-	rm -f hyph_no_NO.dic                  \
+	rm -f hyph_no_NO.zip                  \
+	      hyph_no_NO.dic                  \
 	      hyphlist{1,2,3,4}.txt.gz        \
 	      no.tra                          \
 	      no.tra1                         \
@@ -1055,3 +1056,25 @@ patw9.txt: patw8.txt hyphenologist.verygood no.tra1
 # Create patterns file for OpenOffice.org (Libhyphen)
 hyph_no_NO.dic: pat49.txt
 	LC_CTYPE=UTF-8 perl substrings.pl $< $@ ISO8859-1 2 2
+
+hyph_no_NO.zip : hyph_no_NO.dic
+	zip $@ $^
+
+.PHONY : zip
+zip : hyph_no_NO.zip
+
+VERSION := 1.0.0
+
+# Publish ZIP in Maven repo
+.PHONY : publish
+publish : hyph_no_NO.zip
+	mvn org.apache.maven.plugins:maven-deploy-plugin:3.0.0-M2:deploy-file \
+		-Durl=https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/ \
+		-DrepositoryId=sonatype-nexus-staging \
+		-Dfile=$< \
+		-DgroupId=no.nlb \
+		-DartifactId=spell-no-patterns \
+		-Dversion=$(VERSION) \
+		-Dpackaging=zip \
+		-DgeneratePom=true \
+		-DgeneratePom.description="Norwegian hyphenation dictionary"
