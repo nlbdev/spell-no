@@ -1069,8 +1069,8 @@ VERSION := 1.0.0
 .PHONY : publish
 publish : hyph_no_NO.zip
 	mvn org.apache.maven.plugins:maven-deploy-plugin:3.0.0-M2:deploy-file \
-		-Durl=https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/ \
-		-DrepositoryId=sonatype-nexus-staging \
+		-Durl=https://maven.pkg.github.com/nlbdev/spell-no \
+		-DrepositoryId=github-spell-no \
 		-Dfile=$< \
 		-DgroupId=no.nlb \
 		-DartifactId=spell-no-patterns \
