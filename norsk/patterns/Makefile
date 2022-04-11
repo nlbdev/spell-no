@@ -949,8 +949,9 @@ clean :
 	      pat0.txt                        \
 	      pat{1,4}{1,2,3,4,5,6,7,8,9}.txt \
 	      norsk.nonstandard.pat           \
-	      pattmp
-
+	      pattmp                          \
+	      test-data                       \
+	      test.log
 
 # Here we generate patterns from the file norsk.singlewords.
 
@@ -1065,3 +1066,27 @@ hyph_no_NO.dic: pat49.txt norsk.nonstandard.pat
 	cat $^ >hyph_no_NO.dic.tmp
 	LC_CTYPE=UTF-8 perl hyphen/substrings.pl hyph_no_NO.dic.tmp $@ ISO8859-1 2 3
 	rm hyph_no_NO.dic.tmp
+
+# FIXME: to process the full list of words would take too long (0,1 seconds per word x 584822 words = 16 hours)
+.PHONY : check
+check : hyphen/example hyph_no_NO.dic test-data.small
+	cat $(word 3,$^) | bash test.sh $(word 2,$^) 2>test.log
+
+test-data : hyphlist1.txt.gz
+	gzip -d < $< \
+	  | grep -v -e '${NOHYPHWORDS}' \
+	  | sed -e 's/ .*//' \
+	        -e 's/[*]/-/g' \
+	        -e 's/\.//g' \
+	  | LC_CTYPE=C \
+	    perl make-test-data.pl >$@
+
+hyphen/example : hyphen/Makefile
+	${MAKE} -C $(dir $@) $(notdir $@)
+
+hyphen/Makefile : hyphen/configure
+	cd $(dir $@) && ./configure
+
+hyphen/configure : hyphen/configure.ac
+	cd $(dir $@) && autoreconf -fvi
+
