@@ -943,11 +943,13 @@ lightclean:
 clean :
 	rm -f hyph_no_NO.zip                  \
 	      hyph_no_NO.dic                  \
+	      hyph_no_NO.dic.tmp              \
 	      hyphlist{1,2,3,4}.txt.gz        \
 	      no.tra                          \
 	      no.tra1                         \
 	      pat0.txt                        \
 	      pat{1,4}{1,2,3,4,5,6,7,8,9}.txt \
+	      norsk.nonstandard.pat           \
 	      pattmp
 
 
@@ -1053,9 +1055,17 @@ patw9.txt: patw8.txt hyphenologist.verygood no.tra1
 	$(PATGEN) hyphenologist.verygood $< $@ no.tra1
 	${MAKE} feils.$@.gz
 
+# For now the non-standard hyphenation patterns are not generated from
+# norsk.words (from the words with a " in them), but from a separate
+# list of words in norsk.nonstandard.words.
+norsk.nonstandard.pat : norsk.nonstandard.words
+	cat $< | LC_CTYPE=UTF-8 perl make-nonstandard-patterns.pl >$@
+
 # Create patterns file for OpenOffice.org (Libhyphen)
-hyph_no_NO.dic: pat49.txt
-	LC_CTYPE=UTF-8 perl substrings.pl $< $@ ISO8859-1 2 2
+hyph_no_NO.dic: pat49.txt norsk.nonstandard.pat
+	cat $^ >hyph_no_NO.dic.tmp
+	LC_CTYPE=UTF-8 perl substrings.pl hyph_no_NO.dic.tmp $@ ISO8859-1 2 3
+	rm hyph_no_NO.dic.tmp
 
 hyph_no_NO.zip : hyph_no_NO.dic
 	zip $@ $^
