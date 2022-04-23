@@ -1097,7 +1097,7 @@ hyph_no_NO.zip : hyph_no_NO.dic
 .PHONY : zip
 zip : hyph_no_NO.zip
 
-VERSION := 1.0.0
+VERSION := 1.1.0
 
 # Publish ZIP in Maven repo
 .PHONY : publish
