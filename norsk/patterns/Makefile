@@ -944,6 +944,7 @@ clean :
 	rm -f hyph_no_NO.zip                  \
 	      hyph_no_NO.dic                  \
 	      hyph_no_NO.dic.tmp              \
+	      hyphlist{1,2,3,4}.patinput      \
 	      hyphlist{1,2,3,4}.txt.gz        \
 	      no.tra                          \
 	      no.tra1                         \
