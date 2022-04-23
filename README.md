@@ -1,6 +1,14 @@
 spell-no
 ========
 
+## Dependencies
+
+Using APT in Linux (i.e. Ubuntu):
+
+```bash
+sudo apt-get install texlive-extra-utils
+```
+
 ## Maven setup
 
 Add to `~/.m2/settings.xml` (replace USERNAME and TOKEN with your Github username and token):
